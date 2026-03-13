@@ -1,718 +1,552 @@
-import { useState, useEffect, useRef } from "react";
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CVA × Akuo — Fondamentaux Énergie Renouvelable</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --navy:#0C2340;--navy-light:#1A3A5C;--teal:#0E7C7B;--teal-light:#11A6A5;
+  --amber:#D4952A;--red:#C4384B;--green:#2A7F62;--slate:#3E5060;
+  --text:#1E293B;--text-mid:#475569;--text-light:#64748B;
+  --bg:#F6F7F9;--card:#FFFFFF;--border:#E2E6EC;--border-light:#EEF1F5;
+  --highlight:#E8F4F8;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{height:100%;}
+body{font-family:'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);display:flex;flex-direction:column;min-height:100vh;}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+::-webkit-scrollbar-track{background:transparent}
+p{margin:0 0 8px;line-height:1.7;}
 
-const C = {
-  navy: "#0C2340", navyLight: "#1A3A5C", teal: "#0E7C7B", tealLight: "#11A6A5",
-  amber: "#D4952A", amberLight: "#F5BD4F", red: "#C4384B", green: "#2A7F62",
-  slate: "#3E5060", text: "#1E293B", textMid: "#475569", textLight: "#64748B",
-  bg: "#F6F7F9", card: "#FFFFFF", border: "#E2E6EC", borderLight: "#EEF1F5",
-  highlight: "#E8F4F8",
-};
+/* HEADER */
+.header{background:linear-gradient(135deg,var(--navy) 0%,var(--navy-light) 50%,var(--teal) 100%);color:#fff;padding:24px 32px 20px;flex-shrink:0;}
+.header-inner{display:flex;justify-content:space-between;align-items:flex-start;}
+.header-tag{font-size:10px;text-transform:uppercase;letter-spacing:2px;opacity:0.6;font-family:'DM Mono',monospace;margin-bottom:8px;}
+.header h1{font-size:22px;font-weight:800;letter-spacing:-0.5px;line-height:1.25;}
+.header p{font-size:12.5px;opacity:0.75;margin-top:6px;max-width:520px;line-height:1.55;}
+.header-meta{text-align:right;opacity:0.5;font-size:10px;font-family:'DM Mono',monospace;line-height:1.8;}
+.progress{margin-top:16px;display:flex;gap:3px;}
+.progress-dot{flex:1;height:3px;border-radius:2px;cursor:pointer;transition:background 0.2s;}
+.progress-dot.active{background:rgba(255,255,255,0.8);}
+.progress-dot.inactive{background:rgba(255,255,255,0.15);}
 
+/* LAYOUT */
+.layout{display:flex;flex:1;overflow:hidden;}
+.sidebar{width:220px;background:#fff;border-right:1px solid var(--border);overflow-y:auto;flex-shrink:0;}
+.sidebar-btn{display:flex;align-items:center;gap:10px;width:100%;border:none;background:transparent;padding:9px 20px;cursor:pointer;text-align:left;border-left:3px solid transparent;transition:all 0.15s;font-family:inherit;}
+.sidebar-btn.active{background:rgba(14,124,123,0.05);border-left-color:var(--teal);}
+.sidebar-btn .num{font-family:'DM Mono',monospace;font-size:10px;color:var(--text-light);font-weight:500;width:20px;}
+.sidebar-btn.active .num{color:var(--teal);}
+.sidebar-btn .lbl{font-size:12.5px;font-weight:500;color:var(--text-mid);}
+.sidebar-btn.active .lbl{font-weight:700;color:var(--navy);}
+.content{flex:1;overflow-y:auto;padding:28px 36px 80px;}
+.content-inner{max-width:740px;margin:0 auto;}
+
+/* SECTION TITLE */
+.sec-title{margin-bottom:28px;}
+.sec-title-row{display:flex;align-items:baseline;gap:12px;margin-bottom:6px;}
+.sec-title .num{font-family:'DM Mono',monospace;font-size:13px;color:var(--teal);font-weight:500;}
+.sec-title h2{font-size:24px;font-weight:700;color:var(--navy);letter-spacing:-0.5px;line-height:1.2;}
+.sec-title .sub{font-size:13.5px;color:var(--text-mid);margin:4px 0 0 36px;line-height:1.6;max-width:600px;}
+.sec-title .bar{width:50px;height:3px;background:var(--teal);margin-top:14px;border-radius:2px;margin-left:36px;}
+
+/* CARD */
+.card{background:var(--card);border-radius:8px;border:1px solid var(--border);margin-bottom:18px;overflow:hidden;box-shadow:0 1px 3px rgba(12,35,64,0.04);}
+.card-header{padding:14px 22px;border-bottom:1px solid var(--border-light);display:flex;align-items:center;gap:10px;}
+.card-header .icon{font-size:17px;}
+.card-header .title{font-weight:700;font-size:14px;letter-spacing:-0.2px;}
+.card-body{padding:18px 22px;font-size:13.5px;line-height:1.7;}
+.card-body.no-pad{padding:0;}
+
+/* CALLOUT */
+.callout{border-left:3px solid;border-radius:0 6px 6px 0;padding:12px 16px;margin:14px 0;font-size:12.5px;line-height:1.65;display:flex;gap:10px;align-items:flex-start;}
+.callout .ico{font-size:14px;flex-shrink:0;margin-top:1px;}
+.callout-info{background:#E8F4F8;border-color:var(--teal);color:#0A5E5D;}
+.callout-warn{background:#FEF7E6;border-color:var(--amber);color:#8B6914;}
+.callout-akuo{background:#FFF4EC;border-color:#D4692A;color:#8B4513;}
+.callout-key{background:#EFF6FF;border-color:#3B82F6;color:#1E40AF;}
+.callout-so{background:#F0FDF4;border-color:var(--green);color:#14532D;}
+
+/* DEF */
+.def{display:flex;gap:14px;padding:10px 0;border-bottom:1px solid var(--border-light);}
+.def-term{font-weight:700;font-size:12.5px;color:var(--navy);min-width:130px;flex-shrink:0;}
+.def-val{font-size:12.5px;color:var(--text-mid);line-height:1.6;}
+
+/* MINITAG */
+.tag{display:inline-block;padding:2px 8px;border-radius:4px;font-size:11px;font-weight:600;margin-right:4px;margin-bottom:4px;}
+
+/* EXPAND */
+.expand{border:1px solid var(--border-light);border-radius:6px;margin-top:10px;overflow:hidden;}
+.expand-btn{width:100%;border:none;background:#FAFBFC;padding:10px 16px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;font-size:12.5px;font-weight:600;color:var(--navy);text-align:left;font-family:inherit;}
+.expand-btn.open{background:var(--highlight);}
+.expand-btn .arrow{font-size:16px;color:var(--text-light);transition:transform 0.2s;}
+.expand-btn.open .arrow{transform:rotate(180deg);}
+.expand-body{padding:14px 16px;font-size:12.5px;line-height:1.65;border-top:1px solid var(--border-light);display:none;}
+.expand-body.open{display:block;}
+
+/* FLOW */
+.flow-box{color:#fff;border-radius:6px;padding:7px 10px;text-align:center;min-width:80px;font-size:10.5px;font-weight:600;line-height:1.3;flex-shrink:0;}
+.flow-box .sub{font-size:9px;font-weight:400;opacity:0.8;margin-top:2px;}
+.flow-arrow{display:flex;align-items:center;padding:0 3px;flex-shrink:0;}
+.flow-arrow-line{width:16px;height:2px;background:var(--border);}
+.flow-arrow-head{width:0;height:0;border-top:5px solid transparent;border-bottom:5px solid transparent;border-left:7px solid var(--text-light);}
+
+/* GRIDS */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0;}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:12px 0;}
+.g4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0;}
+
+/* NAVIGATION */
+.nav-footer{display:flex;justify-content:space-between;margin-top:32px;padding-top:20px;border-top:1px solid var(--border);}
+.nav-btn{padding:8px 16px;border-radius:6px;cursor:pointer;font-size:12px;font-family:inherit;}
+.nav-prev{border:1px solid var(--border);background:#fff;color:var(--text-mid);font-weight:500;}
+.nav-next{border:none;background:var(--navy);color:#fff;font-weight:600;}
+
+/* KPI TABLE */
+.kpi-table{background:#F8FAFC;border-radius:6px;overflow:hidden;margin-bottom:14px;border:1px solid var(--border-light);}
+.kpi-row{display:flex;padding:8px 14px;border-bottom:1px solid var(--border-light);align-items:center;}
+.kpi-row:last-child{border-bottom:none;}
+.kpi-label{width:120px;font-weight:600;font-size:11.5px;flex-shrink:0;}
+.kpi-value{width:120px;font-weight:700;font-size:12.5px;color:var(--navy);flex-shrink:0;font-family:'DM Mono',monospace;}
+.kpi-note{font-size:11px;color:var(--text-light);flex:1;}
+
+/* ENTRY ROUTE CARD */
+.entry-card{display:flex;gap:0;border-radius:8px;overflow:hidden;margin-bottom:10px;}
+.entry-left{color:#fff;padding:16px 14px;min-width:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;}
+.entry-left .ico{font-size:28px;}
+.entry-left .lbl{font-weight:700;font-size:14px;margin-top:6px;}
+.entry-right{padding:14px 18px;flex:1;}
+
+/* REVENUE STRIP */
+.rev-strip{border-bottom:1px solid var(--border-light);}
+.rev-strip:last-child{border-bottom:none;}
+.rev-inner{display:flex;}
+.rev-bar{width:6px;flex-shrink:0;}
+.rev-content{padding:16px 22px;flex:1;}
+.rev-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;flex-wrap:wrap;gap:6px;}
+.rev-risk{font-family:'DM Mono',monospace;font-size:12px;}
+.rev-footer{padding:12px 22px;background:#FAFBFC;display:flex;justify-content:space-between;font-size:10.5px;font-weight:600;color:var(--text-light);}
+
+/* SVG CONTAINER */
+.svg-wrap{background:#F8FAFC;border-radius:8px;padding:16px 10px 8px;margin:12px 0;overflow-x:auto;}
+.svg-wrap svg{width:100%;max-width:480px;display:block;margin:0 auto;}
+.svg-caption{font-size:11px;color:var(--text-mid);text-align:center;margin-top:4px;line-height:1.5;padding:0 10px;}
+.svg-label{font-size:11px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px;padding-left:10px;}
+.svg-legend{display:flex;gap:8px;margin-top:8px;padding:0 10px;flex-wrap:wrap;}
+.svg-legend-item{display:flex;gap:6px;align-items:flex-start;font-size:10.5px;color:var(--text-mid);line-height:1.4;}
+.svg-legend-dot{width:8px;height:8px;border-radius:2px;margin-top:2px;flex-shrink:0;}
+
+/* COLORED BLOCKS */
+.block{border-radius:8px;padding:14px;}
+.block-top{border-top-width:3px;border-top-style:solid;}
+.block-left{border-left-width:4px;border-left-style:solid;}
+
+/* PROS CONS */
+.pros{background:#F0FDF4;border-radius:6px;padding:10px 14px;}
+.pros .h{font-size:11px;font-weight:700;color:var(--green);}
+.cons{background:#FEF2F2;border-radius:6px;padding:10px 14px;}
+.cons .h{font-size:11px;font-weight:700;color:var(--red);}
+.pros .txt,.cons .txt{font-size:11.5px;color:var(--text);margin-top:3px;line-height:1.55;}
+
+.metric-badge{font-size:11px;border-radius:4px;padding:6px 10px;font-weight:500;font-family:'DM Mono',monospace;}
+
+/* NUMBERED CIRCLE */
+.num-circle{width:20px;height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:#fff;flex-shrink:0;}
+.num-circle-sm{width:18px;height:18px;border-radius:3px;font-size:10px;}
+
+/* DOT LIST */
+.dot-item{font-size:11.5px;padding:3px 0;display:flex;gap:6px;align-items:flex-start;line-height:1.4;}
+.dot{width:4px;height:4px;border-radius:50%;flex-shrink:0;margin-top:5px;}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .content{padding:20px 16px 60px;}
+  .g3,.g4{grid-template-columns:1fr 1fr;}
+  .entry-card{flex-direction:column;}
+  .entry-left{flex-direction:row;min-width:auto;padding:12px 14px;gap:10px;}
+}
+@media(max-width:600px){
+  .g2,.g3,.g4{grid-template-columns:1fr;}
+  .header{padding:16px 16px 14px;}
+  .header h1{font-size:18px;}
+  .rev-header{flex-direction:column;align-items:flex-start;}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-inner">
+    <div>
+      <div class="header-tag">CVA × Akuo · Onboarding consultant</div>
+      <h1>Fondamentaux du marché de l'énergie renouvelable</h1>
+      <p>Guide interactif — de la formation des prix de l'électricité à la structuration d'un portefeuille d'IPP. Conçu pour la mission Akuo 2030 Strategic Plan.</p>
+    </div>
+    <div class="header-meta">Confidentiel<br>Mars 2026<br>v2.0</div>
+  </div>
+  <div class="progress" id="progress"></div>
+</div>
+
+<!-- LAYOUT -->
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="content" id="content">
+    <div class="content-inner" id="content-inner"></div>
+  </div>
+</div>
+
+<script>
 const SECTIONS = [
-  { id: "intro", label: "Vue d'ensemble", num: "00" },
-  { id: "market", label: "Marché électrique", num: "01" },
-  { id: "tech", label: "Technologies", num: "02" },
-  { id: "revenue", label: "Revenue stack", num: "03" },
-  { id: "lifecycle", label: "Cycle de projet", num: "04" },
-  { id: "grid", label: "Réseau & permitting", num: "05" },
-  { id: "finance", label: "Finance de projet", num: "06" },
-  { id: "competition", label: "Concurrence", num: "07" },
-  { id: "portfolio", label: "Effets de portefeuille", num: "08" },
-  { id: "akuo", label: "Mission Akuo", num: "09" },
-  { id: "method", label: "Méthodologie CVA", num: "10" },
+  {id:"intro",label:"Vue d'ensemble",num:"00"},
+  {id:"market",label:"Marché électrique",num:"01"},
+  {id:"tech",label:"Technologies",num:"02"},
+  {id:"revenue",label:"Revenue stack",num:"03"},
+  {id:"lifecycle",label:"Cycle de projet",num:"04"},
+  {id:"grid",label:"Réseau & permitting",num:"05"},
+  {id:"finance",label:"Finance de projet",num:"06"},
+  {id:"competition",label:"Concurrence",num:"07"},
+  {id:"portfolio",label:"Effets de portefeuille",num:"08"},
+  {id:"akuo",label:"Mission Akuo",num:"09"},
+  {id:"method",label:"Méthodologie CVA",num:"10"},
 ];
 
-function SectionTitle({ num, title, subtitle }) {
-  return (
-    <div style={{ marginBottom: 28 }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 12, marginBottom: 6 }}>
-        <span style={{ fontFamily: "monospace", fontSize: 13, color: C.teal, fontWeight: 500 }}>{num}</span>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: C.navy, letterSpacing: -0.5, margin: 0, lineHeight: 1.2 }}>{title}</h2>
-      </div>
-      {subtitle && <p style={{ fontSize: 13.5, color: C.textMid, margin: "4px 0 0 36px", lineHeight: 1.6, maxWidth: 600 }}>{subtitle}</p>}
-      <div style={{ width: 50, height: 3, background: C.teal, marginTop: 14, borderRadius: 2, marginLeft: 36 }} />
-    </div>
-  );
+let activeSection = "intro";
+
+function navigate(id) {
+  activeSection = id;
+  render();
+  document.getElementById('content').scrollTop = 0;
 }
 
-function Card({ title, children, accent = C.navy, icon, noPad }) {
-  return (
-    <div style={{ background: C.card, borderRadius: 8, border: "1px solid " + C.border, marginBottom: 18, overflow: "hidden", boxShadow: "0 1px 3px rgba(12,35,64,0.04)" }}>
-      {title && (
-        <div style={{ padding: "14px 22px", borderBottom: "1px solid " + C.borderLight, display: "flex", alignItems: "center", gap: 10, background: accent + "08" }}>
-          {icon && <span style={{ fontSize: 17 }}>{icon}</span>}
-          <span style={{ fontWeight: 700, fontSize: 14, color: accent, letterSpacing: -0.2 }}>{title}</span>
-        </div>
-      )}
-      <div style={{ padding: noPad ? 0 : "18px 22px", fontSize: 13.5, lineHeight: 1.7, color: C.text }}>{children}</div>
-    </div>
-  );
+function toggleExpand(btn) {
+  btn.classList.toggle('open');
+  btn.nextElementSibling.classList.toggle('open');
 }
 
-function Callout({ type = "info", children }) {
-  const styles = {
-    info: { bg: "#E8F4F8", border: C.teal, color: "#0A5E5D", icon: "💡" },
-    warn: { bg: "#FEF7E6", border: C.amber, color: "#8B6914", icon: "⚠️" },
-    akuo: { bg: "#FFF4EC", border: "#D4692A", color: "#8B4513", icon: "🎯" },
-    key: { bg: "#EFF6FF", border: "#3B82F6", color: "#1E40AF", icon: "🔑" },
-    so: { bg: "#F0FDF4", border: C.green, color: "#14532D", icon: "→" },
-  };
-  const s = styles[type];
-  return (
-    <div style={{ background: s.bg, borderLeft: "3px solid " + s.border, borderRadius: "0 6px 6px 0", padding: "12px 16px", margin: "14px 0", fontSize: 12.5, lineHeight: 1.65, color: s.color, display: "flex", gap: 10, alignItems: "flex-start" }}>
-      <span style={{ fontSize: 14, flexShrink: 0, marginTop: 1 }}>{s.icon}</span>
-      <div>{children}</div>
-    </div>
-  );
+// ── HELPERS ──
+function callout(type, icon, html) {
+  return `<div class="callout callout-${type}"><span class="ico">${icon}</span><div>${html}</div></div>`;
+}
+function def(term, html) {
+  return `<div class="def"><div class="def-term">${term}</div><div class="def-val">${html}</div></div>`;
+}
+function tag(text, color) {
+  return `<span class="tag" style="background:${color}14;color:${color}">${text}</span>`;
+}
+function expand(title, html) {
+  return `<div class="expand"><button class="expand-btn" onclick="toggleExpand(this)">${title}<span class="arrow">▾</span></button><div class="expand-body">${html}</div></div>`;
+}
+function flowBox(label, sub, color) {
+  return `<div class="flow-box" style="background:${color}">${label}${sub?`<div class="sub">${sub}</div>`:''}</div>`;
+}
+function flowArrow() {
+  return `<div class="flow-arrow"><div class="flow-arrow-line"></div><div class="flow-arrow-head"></div></div>`;
+}
+function secTitle(num, title, subtitle) {
+  return `<div class="sec-title"><div class="sec-title-row"><span class="num">${num}</span><h2>${title}</h2></div>${subtitle?`<p class="sub">${subtitle}</p>`:''}<div class="bar"></div></div>`;
+}
+function card(title, icon, accent, body, noPad) {
+  return `<div class="card"><div class="card-header" style="background:${accent}08"><span class="icon">${icon}</span><span class="title" style="color:${accent}">${title}</span></div><div class="card-body${noPad?' no-pad':''}">${body}</div></div>`;
 }
 
-function Def({ term, children }) {
-  return (
-    <div style={{ display: "flex", gap: 14, padding: "10px 0", borderBottom: "1px solid " + C.borderLight }}>
-      <div style={{ fontWeight: 700, fontSize: 12.5, color: C.navy, minWidth: 130, flexShrink: 0 }}>{term}</div>
-      <div style={{ fontSize: 12.5, color: C.textMid, lineHeight: 1.6 }}>{children}</div>
-    </div>
-  );
+// ── MERIT ORDER SVG ──
+function meritOrderSVG() {
+  const techs=[{n:"Nucl.",c:12,mw:63,col:"#6B21A8"},{n:"Hydro",c:5,mw:25,col:"#0369A1"},{n:"Éolien",c:0,mw:35,col:"#059669"},{n:"Solaire",c:0,mw:45,col:"#D97706"},{n:"CCGT",c:45,mw:40,col:"#DC2626"},{n:"TAC",c:80,mw:15,col:"#991B1B"}];
+  const W=480,H=200,pl=50,pr=20,pt=20,pb=40,cW=W-pl-pr,cH=H-pt-pb,maxC=95,totalMW=techs.reduce((s,t)=>s+t.mw,0);
+  let cumX=0,bars='';
+  techs.forEach(t=>{
+    const bW=(t.mw/totalMW)*cW,bH=Math.max(((t.c+8)/maxC)*cH,14),x=pl+cumX,y=pt+cH-bH;
+    bars+=`<rect x="${x+1}" y="${y}" width="${bW-2}" height="${bH}" fill="${t.col}" rx="2" opacity="0.9"/>`;
+    bars+=`<text x="${x+bW/2}" y="${y+bH/2+1}" text-anchor="middle" dominant-baseline="middle" font-size="8" fill="#fff" font-weight="600" font-family="DM Sans">${t.n}</text>`;
+    bars+=`<text x="${x+bW/2}" y="${y-5}" text-anchor="middle" font-size="7.5" fill="${t.col}" font-weight="500" font-family="DM Mono">${t.c===0?'≈0':t.c}€</text>`;
+    cumX+=bW;
+  });
+  const dX=pl+(180/totalMW)*cW,mY=pt+cH-(45/maxC)*cH;
+  let grid='';
+  [20,40,60,80].forEach(v=>{const y=pt+cH-(v/maxC)*cH;grid+=`<line x1="${pl}" y1="${y}" x2="${W-pr}" y2="${y}" stroke="var(--border-light)" stroke-width="0.5" stroke-dasharray="3,3"/><text x="${pl-6}" y="${y+3}" text-anchor="end" font-size="8" fill="var(--text-light)" font-family="DM Mono">${v}</text>`;});
+  return `<div class="svg-wrap"><svg viewBox="0 0 ${W} ${H}"><line x1="${pl}" y1="${pt}" x2="${pl}" y2="${H-pb}" stroke="var(--border)" stroke-width="1.5"/><line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="var(--border)" stroke-width="1.5"/><text x="14" y="${H/2}" text-anchor="middle" font-size="8.5" fill="var(--text-light)" transform="rotate(-90,14,${H/2})" font-family="DM Sans">€/MWh</text><text x="${W/2}" y="${H-6}" text-anchor="middle" font-size="8.5" fill="var(--text-light)" font-family="DM Sans">Capacité cumulée (GW)</text>${grid}${bars}<line x1="${dX}" y1="${pt-5}" x2="${dX}" y2="${H-pb+5}" stroke="var(--navy)" stroke-width="1.5" stroke-dasharray="5,3"/><text x="${dX+4}" y="${pt+8}" font-size="8" fill="var(--navy)" font-weight="600" font-family="DM Sans">Demande</text><line x1="${pl}" y1="${mY}" x2="${dX}" y2="${mY}" stroke="var(--red)" stroke-width="1" stroke-dasharray="3,2"/><circle cx="${dX}" cy="${mY}" r="3.5" fill="var(--red)"/><text x="${pl+4}" y="${mY-5}" font-size="7.5" fill="var(--red)" font-weight="600" font-family="DM Sans">Prix spot = 45 €/MWh</text></svg><div class="svg-caption">La dernière centrale appelée (CCGT ici) fixe le prix pour <em>toutes</em> les centrales. Solaire & éolien (coût marginal ≈ 0) captent la totalité du prix spot comme marge brute.</div></div>`;
 }
 
-function MiniTag({ children, color = C.teal }) {
-  return <span style={{ display: "inline-block", background: color + "14", color: color, padding: "2px 8px", borderRadius: 4, fontSize: 11, fontWeight: 600, marginRight: 4, marginBottom: 4 }}>{children}</span>;
-}
-
-function FlowBox({ label, sub, color = C.navy, small, width }) {
-  return (
-    <div style={{ background: color, color: "#fff", borderRadius: 6, padding: small ? "7px 10px" : "10px 14px", textAlign: "center", minWidth: width || (small ? 80 : 100), fontSize: small ? 10.5 : 12, fontWeight: 600, lineHeight: 1.3, flexShrink: 0 }}>
-      {label}
-      {sub && <div style={{ fontSize: small ? 9 : 10, fontWeight: 400, opacity: 0.8, marginTop: 2 }}>{sub}</div>}
-    </div>
-  );
-}
-
-function FlowArrow({ vertical }) {
-  if (vertical) return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", padding: "4px 0" }}>
-      <div style={{ width: 2, height: 18, background: C.border }} />
-      <div style={{ width: 0, height: 0, borderLeft: "5px solid transparent", borderRight: "5px solid transparent", borderTop: "7px solid " + C.textLight }} />
-    </div>
-  );
-  return (
-    <div style={{ display: "flex", alignItems: "center", padding: "0 3px", flexShrink: 0 }}>
-      <div style={{ width: 16, height: 2, background: C.border }} />
-      <div style={{ width: 0, height: 0, borderTop: "5px solid transparent", borderBottom: "5px solid transparent", borderLeft: "7px solid " + C.textLight }} />
-    </div>
-  );
-}
-
-function ExpandBlock({ title, children }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <div style={{ border: "1px solid " + C.borderLight, borderRadius: 6, marginTop: 10, overflow: "hidden" }}>
-      <button onClick={() => setOpen(!open)} style={{ width: "100%", border: "none", background: open ? C.highlight : "#FAFBFC", padding: "10px 16px", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12.5, fontWeight: 600, color: C.navy, textAlign: "left" }}>
-        {title}
-        <span style={{ fontSize: 16, color: C.textLight, transition: "transform 0.2s", transform: open ? "rotate(180deg)" : "rotate(0)" }}>▾</span>
-      </button>
-      {open && <div style={{ padding: "14px 16px", fontSize: 12.5, lineHeight: 1.65, color: C.text, borderTop: "1px solid " + C.borderLight }}>{children}</div>}
-    </div>
-  );
-}
-
-function MeritOrderSVG() {
-  const techs = [
-    { name: "Nucl.", cost: 12, mw: 63, color: "#6B21A8" },
-    { name: "Hydro", cost: 5, mw: 25, color: "#0369A1" },
-    { name: "Éolien", cost: 0, mw: 35, color: "#059669" },
-    { name: "Solaire", cost: 0, mw: 45, color: "#D97706" },
-    { name: "CCGT", cost: 45, mw: 40, color: "#DC2626" },
-    { name: "TAC", cost: 80, mw: 15, color: "#991B1B" },
-  ];
-  const W=480,H=200,pad={t:20,r:20,b:40,l:50},cW=W-pad.l-pad.r,cH=H-pad.t-pad.b,maxC=95,totalMW=techs.reduce((s,t)=>s+t.mw,0);
-  let cumX=0; const demandMW=180,demandX=pad.l+(demandMW/totalMW)*cW,marginalPrice=45,marginalY=pad.t+cH-(marginalPrice/maxC)*cH;
-  return (
-    <div style={{ background: "#F8FAFC", borderRadius: 8, padding: "16px 10px 8px", margin: "12px 0", overflowX: "auto" }}>
-      <svg viewBox={"0 0 "+W+" "+H} style={{ width: "100%", maxWidth: 480, display: "block", margin: "0 auto" }}>
-        <line x1={pad.l} y1={pad.t} x2={pad.l} y2={H-pad.b} stroke={C.border} strokeWidth={1.5}/>
-        <line x1={pad.l} y1={H-pad.b} x2={W-pad.r} y2={H-pad.b} stroke={C.border} strokeWidth={1.5}/>
-        <text x={14} y={H/2} textAnchor="middle" fontSize={8.5} fill={C.textLight} transform={"rotate(-90,14,"+(H/2)+")"}>€/MWh</text>
-        <text x={W/2} y={H-6} textAnchor="middle" fontSize={8.5} fill={C.textLight}>Capacité cumulée (GW)</text>
-        {[20,40,60,80].map(v=>{const y=pad.t+cH-(v/maxC)*cH;return<g key={v}><line x1={pad.l} y1={y} x2={W-pad.r} y2={y} stroke={C.borderLight} strokeWidth={0.5} strokeDasharray="3,3"/><text x={pad.l-6} y={y+3} textAnchor="end" fontSize={8} fill={C.textLight} fontFamily="monospace">{v}</text></g>;})}
-        {techs.map((t,i)=>{const bW=(t.mw/totalMW)*cW,bH=Math.max(((t.cost+8)/maxC)*cH,14),x=pad.l+cumX,y=pad.t+cH-bH;cumX+=bW;return<g key={i}><rect x={x+1} y={y} width={bW-2} height={bH} fill={t.color} rx={2} opacity={0.9}/><text x={x+bW/2} y={y+bH/2+1} textAnchor="middle" dominantBaseline="middle" fontSize={8} fill="#fff" fontWeight="600">{t.name}</text><text x={x+bW/2} y={y-5} textAnchor="middle" fontSize={7.5} fill={t.color} fontWeight="500" fontFamily="monospace">{t.cost===0?"≈0":t.cost}€</text></g>;})}
-        <line x1={demandX} y1={pad.t-5} x2={demandX} y2={H-pad.b+5} stroke={C.navy} strokeWidth={1.5} strokeDasharray="5,3"/>
-        <text x={demandX+4} y={pad.t+8} fontSize={8} fill={C.navy} fontWeight="600">Demande</text>
-        <line x1={pad.l} y1={marginalY} x2={demandX} y2={marginalY} stroke={C.red} strokeWidth={1} strokeDasharray="3,2"/>
-        <circle cx={demandX} cy={marginalY} r={3.5} fill={C.red}/>
-        <text x={pad.l+4} y={marginalY-5} fontSize={7.5} fill={C.red} fontWeight="600">Prix spot = 45 €/MWh</text>
-      </svg>
-      <div style={{ fontSize: 11, color: C.textMid, textAlign: "center", marginTop: 4, lineHeight: 1.5, padding: "0 10px" }}>
-        La dernière centrale appelée (CCGT ici) fixe le prix pour <em>toutes</em> les centrales. Solaire & éolien (coût marginal ≈ 0) captent la totalité du prix spot comme marge brute.
-      </div>
-    </div>
-  );
-}
-
-function DuckCurveSVG() {
-  const W=480,H=180,pad={t:25,r:20,b:35,l:45},cW=W-pad.l-pad.r,cH=H-pad.t-pad.b;
+// ── DUCK CURVE SVG ──
+function duckCurveSVG() {
+  const W=480,H=180,pl=45,pr=20,pt=25,pb=35,cW=W-pl-pr,cH=H-pt-pb;
   const demand=[52,48,45,44,43,44,52,62,65,63,60,58,57,56,55,56,60,68,72,70,65,60,56,53];
   const solar=[0,0,0,0,0,0,0,2,12,22,30,35,36,34,28,18,8,1,0,0,0,0,0,0];
-  const netDemand=demand.map((d,i)=>d-solar[i]);
-  const maxV=80,toX=i=>pad.l+(i/23)*cW,toY=v=>pad.t+cH-(v/maxV)*cH;
-  const pathD=arr=>arr.map((v,i)=>(i===0?"M":"L")+toX(i)+","+toY(v)).join(" ");
-  const solarFill="M"+toX(0)+","+toY(0)+" "+solar.map((v,i)=>"L"+toX(i)+","+toY(v)).join(" ")+" L"+toX(23)+","+toY(0)+" Z";
-  return (
-    <div style={{ background: "#F8FAFC", borderRadius: 8, padding: "14px 10px 8px", margin: "12px 0", overflowX: "auto" }}>
-      <div style={{ fontSize: 11, fontWeight: 700, color: C.textLight, textTransform: "uppercase", letterSpacing: 0.5, marginBottom: 6, paddingLeft: 10 }}>Courbe de canard (Duck Curve) — profil journalier type</div>
-      <svg viewBox={"0 0 "+W+" "+H} style={{ width: "100%", maxWidth: 480, display: "block", margin: "0 auto" }}>
-        <line x1={pad.l} y1={pad.t} x2={pad.l} y2={H-pad.b} stroke={C.border} strokeWidth={1}/>
-        <line x1={pad.l} y1={H-pad.b} x2={W-pad.r} y2={H-pad.b} stroke={C.border} strokeWidth={1}/>
-        {[0,6,12,18,23].map(h=><text key={h} x={toX(h)} y={H-pad.b+14} textAnchor="middle" fontSize={8} fill={C.textLight} fontFamily="monospace">{h}h</text>)}
-        <text x={14} y={H/2} textAnchor="middle" fontSize={8} fill={C.textLight} transform={"rotate(-90,14,"+(H/2)+")"}>GW</text>
-        <path d={solarFill} fill="#D9770622"/>
-        <path d={pathD(demand)} fill="none" stroke={C.navy} strokeWidth={2}/>
-        <path d={pathD(netDemand)} fill="none" stroke={C.amber} strokeWidth={2} strokeDasharray="5,3"/>
-        <path d={pathD(solar)} fill="none" stroke="#D97706" strokeWidth={1.5}/>
-        <text x={toX(20)} y={toY(demand[20])-6} fontSize={8} fill={C.navy} fontWeight="600">Demande brute</text>
-        <text x={toX(18)+10} y={toY(netDemand[18])+14} fontSize={8} fill={C.amber} fontWeight="600">Demande résiduelle</text>
-        <text x={toX(12)} y={toY(solar[12])-6} fontSize={8} fill="#D97706" fontWeight="600">Production solaire</text>
-        <line x1={toX(17)} y1={toY(netDemand[17])} x2={toX(17)} y2={toY(demand[17])} stroke={C.red} strokeWidth={1} strokeDasharray="2,2"/>
-        <text x={toX(17)+4} y={toY((netDemand[17]+demand[17])/2)+3} fontSize={7} fill={C.red} fontWeight="600">Rampe</text>
-      </svg>
-      <div style={{ display: "flex", gap: 8, marginTop: 8, padding: "0 10px", flexWrap: "wrap" }}>
-        {[{c:"#D97706",t:"Creux solaire : prix s'effondrent en milieu de journée"},{c:C.amber,t:"Rampe du soir : montée brutale de demande résiduelle → prix peak"},{c:C.red,t:"Volatilité intra-day = opportunité pour le stockage (arbitrage)"}].map((item,i)=>(
-          <div key={i} style={{ display: "flex", gap: 6, alignItems: "flex-start", fontSize: 10.5, color: C.textMid, lineHeight: 1.4 }}>
-            <div style={{ width: 8, height: 8, borderRadius: 2, background: item.c, marginTop: 2, flexShrink: 0 }}/>{item.t}
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  const net=demand.map((d,i)=>d-solar[i]);
+  const maxV=80,toX=i=>pl+(i/23)*cW,toY=v=>pt+cH-(v/maxV)*cH;
+  const pathD=arr=>arr.map((v,i)=>(i===0?'M':'L')+toX(i).toFixed(1)+','+toY(v).toFixed(1)).join(' ');
+  const solarFill='M'+toX(0).toFixed(1)+','+toY(0).toFixed(1)+' '+solar.map((v,i)=>'L'+toX(i).toFixed(1)+','+toY(v).toFixed(1)).join(' ')+' L'+toX(23).toFixed(1)+','+toY(0).toFixed(1)+' Z';
+  let hours='';[0,6,12,18,23].forEach(h=>{hours+=`<text x="${toX(h).toFixed(1)}" y="${H-pb+14}" text-anchor="middle" font-size="8" fill="var(--text-light)" font-family="DM Mono">${h}h</text>`;});
+  return `<div class="svg-wrap"><div class="svg-label">Courbe de canard (Duck Curve) — profil journalier type</div><svg viewBox="0 0 ${W} ${H}"><line x1="${pl}" y1="${pt}" x2="${pl}" y2="${H-pb}" stroke="var(--border)" stroke-width="1"/><line x1="${pl}" y1="${H-pb}" x2="${W-pr}" y2="${H-pb}" stroke="var(--border)" stroke-width="1"/>${hours}<text x="14" y="${H/2}" text-anchor="middle" font-size="8" fill="var(--text-light)" transform="rotate(-90,14,${H/2})" font-family="DM Sans">GW</text><path d="${solarFill}" fill="#D9770622"/><path d="${pathD(demand)}" fill="none" stroke="var(--navy)" stroke-width="2"/><path d="${pathD(net)}" fill="none" stroke="var(--amber)" stroke-width="2" stroke-dasharray="5,3"/><path d="${pathD(solar)}" fill="none" stroke="#D97706" stroke-width="1.5"/><text x="${toX(20).toFixed(1)}" y="${(toY(demand[20])-6).toFixed(1)}" font-size="8" fill="var(--navy)" font-weight="600" font-family="DM Sans">Demande brute</text><text x="${(toX(18)+10).toFixed(1)}" y="${(toY(net[18])+14).toFixed(1)}" font-size="8" fill="var(--amber)" font-weight="600" font-family="DM Sans">Demande résiduelle</text><text x="${toX(12).toFixed(1)}" y="${(toY(solar[12])-6).toFixed(1)}" font-size="8" fill="#D97706" font-weight="600" font-family="DM Sans">Production solaire</text><line x1="${toX(17).toFixed(1)}" y1="${toY(net[17]).toFixed(1)}" x2="${toX(17).toFixed(1)}" y2="${toY(demand[17]).toFixed(1)}" stroke="var(--red)" stroke-width="1" stroke-dasharray="2,2"/><text x="${(toX(17)+4).toFixed(1)}" y="${toY((net[17]+demand[17])/2).toFixed(1)}" font-size="7" fill="var(--red)" font-weight="600" font-family="DM Sans">Rampe</text></svg><div class="svg-legend"><div class="svg-legend-item"><div class="svg-legend-dot" style="background:#D97706"></div>Creux solaire : prix s'effondrent en milieu de journée</div><div class="svg-legend-item"><div class="svg-legend-dot" style="background:var(--amber)"></div>Rampe du soir : montée brutale de demande résiduelle → prix peak</div><div class="svg-legend-item"><div class="svg-legend-dot" style="background:var(--red)"></div>Volatilité intra-day = opportunité pour le stockage (arbitrage)</div></div></div>`;
 }
 
-function SectionIntro() {
-  return (<>
-    <SectionTitle num="00" title="Vue d'ensemble" subtitle="De développeur pur à IPP intégré — le shift fondamental qui sous-tend toute la mission Akuo" />
-    <Card title="Qu'est-ce qu'un IPP ?" icon="🏗️" accent={C.navy}>
-      <p>Un <strong>Independent Power Producer (IPP)</strong> est un acteur privé qui développe, finance, construit et exploite des centrales de production d'électricité. Le terme couvre un spectre large :</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, margin: "14px 0" }}>
-        {[
-          { title: "Développeur pur", desc: "Développe le projet puis vend le SPV avant ou après construction. Revenus = marge de développement. Peu de capital immobilisé.", color: "#3B82F6", tag: "Asset-light" },
-          { title: "IPP semi-intégré", desc: "Conserve certains actifs, en vend d'autres (build, partially hold). Equity sélective. Revenus mixtes.", color: C.teal, tag: "Transition" },
-          { title: "IPP intégré", desc: "Conserve les actifs, injecte de l'equity, capte les revenus d'exploitation sur 20-30 ans. WACC = avantage compétitif.", color: C.navy, tag: "Asset-heavy" },
-        ].map((m,i)=>(
-          <div key={i} style={{ background: m.color+"08", borderRadius: 8, padding: 14, borderTop: "3px solid "+m.color }}>
-            <MiniTag color={m.color}>{m.tag}</MiniTag>
-            <div style={{ fontWeight: 700, fontSize: 13, color: m.color, margin: "6px 0 4px" }}>{m.title}</div>
-            <div style={{ fontSize: 11.5, color: C.textMid, lineHeight: 1.55 }}>{m.desc}</div>
-          </div>
-        ))}
-      </div>
-      <Callout type="akuo"><strong>Akuo pré-Ardian :</strong> développeur pur — maximisation des revenus de développement, peu d'equity. <strong>Post-Ardian (juillet 2025) :</strong> bascule vers IPP intégré, equity at stake. Les critères changent : ce n'est plus la marge de dev qui compte mais le <strong>project IRR vs. hurdle rate</strong> et la <strong>récurrence des cash flows</strong>.</Callout>
-    </Card>
-    <Card title="Chaîne de valeur d'un projet renouvelable" icon="⛓️" accent={C.teal}>
-      <div style={{ overflowX: "auto", padding: "10px 0" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 4, minWidth: 650 }}>
-          {[
-            { label: "Origination", sub: "Site, foncier, études", color: C.navy, metric: "DEVEX" },
-            { label: "Développement", sub: "Permitting, études, grid", color: C.navyLight, metric: "DEVEX" },
-            { label: "FID", sub: "Go/No-go", color: C.amber, metric: "Decision" },
-            { label: "Construction", sub: "EPC, procurement", color: C.teal, metric: "CAPEX" },
-            { label: "COD", sub: "Mise en service", color: C.green, metric: "Milestone" },
-            { label: "Exploitation", sub: "O&M, monitoring, OT", color: "#0D9488", metric: "OPEX" },
-            { label: "Vente d'énergie", sub: "Revenue stack, EMS", color: C.amber, metric: "Revenus" },
-          ].map((s,i)=>(
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-              <FlowBox label={s.label} sub={s.sub} color={s.color} small />
-              {i<6&&<FlowArrow/>}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 14 }}>
-        <div style={{ background: "#FEF2F2", borderRadius: 6, padding: "10px 14px" }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: C.red }}>← Phase cash-out (2-7 ans)</div>
-          <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>Dépenses sans revenus. Capital à risque. Time-to-COD = variable critique.</div>
-        </div>
-        <div style={{ background: "#F0FDF4", borderRadius: 6, padding: "10px 14px" }}>
-          <div style={{ fontSize: 11.5, fontWeight: 700, color: C.green }}>Phase cash-in (20-35 ans) →</div>
-          <div style={{ fontSize: 11, color: C.textMid, marginTop: 2 }}>Revenus récurrents. Qualité dépend du revenue stack (secured vs. merchant).</div>
-        </div>
-      </div>
-    </Card>
-    <Card title="Glossaire structurant" icon="📖" accent={C.slate}>
-      <Def term="SPV">Special Purpose Vehicle — société projet dédiée à un seul actif. L'unité de base du M&A dans les renouvelables : on achète/vend le SPV, pas l'actif physique.</Def>
-      <Def term="EPC">Engineering, Procurement & Construction — contrat clé en main de construction. Le contractant assume le risque de coût et de délai (lump sum turnkey).</Def>
-      <Def term="O&M">Operations & Maintenance — maintenance préventive et corrective, surveillance des équipements. Peut être internalisé ou externalisé (OEM ou tiers).</Def>
-      <Def term="OT">Operational Technology — couche de contrôle temps réel : SCADA, capteurs, automatisation. Critique pour la performance et le monitoring à distance.</Def>
-      <Def term="EMS">Energy Management System — optimisation en temps réel du dispatch, trading intra-day, participation aux marchés de flexibilité. Le « cerveau » de la valorisation.</Def>
-      <Def term="COD">Commercial Operation Date — date de mise en service commerciale. Point d'inflexion cash-out → cash-in.</Def>
-      <Def term="FID">Final Investment Decision — décision de lancer la construction. Pré-requis : permis, financement, offtake sécurisé.</Def>
-    </Card>
-  </>);
+// ═══════════════════════════════════════════════════
+// SECTIONS
+// ═══════════════════════════════════════════════════
+
+const CONTENT = {};
+
+CONTENT.intro = () => secTitle('00','Vue d\'ensemble','De développeur pur à IPP intégré — le shift fondamental qui sous-tend toute la mission Akuo')
++ card("Qu'est-ce qu'un IPP ?","🏗️","var(--navy)",`
+<p>Un <strong>Independent Power Producer (IPP)</strong> est un acteur privé qui développe, finance, construit et exploite des centrales de production d'électricité. Le terme couvre un spectre large :</p>
+<div class="g3">
+  <div class="block block-top" style="background:#3B82F608;border-top-color:#3B82F6">${tag('Asset-light','#3B82F6')}<div style="font-weight:700;font-size:13px;color:#3B82F6;margin:6px 0 4px">Développeur pur</div><div style="font-size:11.5px;color:var(--text-mid);line-height:1.55">Développe le projet puis vend le SPV avant ou après construction. Revenus = marge de développement. Peu de capital immobilisé.</div></div>
+  <div class="block block-top" style="background:var(--teal)08;border-top-color:var(--teal)">${tag('Transition','#0E7C7B')}<div style="font-weight:700;font-size:13px;color:var(--teal);margin:6px 0 4px">IPP semi-intégré</div><div style="font-size:11.5px;color:var(--text-mid);line-height:1.55">Conserve certains actifs, en vend d'autres (build, partially hold). Equity sélective. Revenus mixtes.</div></div>
+  <div class="block block-top" style="background:var(--navy)08;border-top-color:var(--navy)">${tag('Asset-heavy','#0C2340')}<div style="font-weight:700;font-size:13px;color:var(--navy);margin:6px 0 4px">IPP intégré</div><div style="font-size:11.5px;color:var(--text-mid);line-height:1.55">Conserve les actifs, injecte de l'equity, capte les revenus d'exploitation sur 20-30 ans. WACC = avantage compétitif.</div></div>
+</div>
+${callout('akuo','🎯','<strong>Akuo pré-Ardian :</strong> développeur pur — maximisation des revenus de développement, peu d\'equity. <strong>Post-Ardian (juillet 2025) :</strong> bascule vers IPP intégré, equity at stake. Les critères changent : ce n\'est plus la marge de dev qui compte mais le <strong>project IRR vs. hurdle rate</strong> et la <strong>récurrence des cash flows</strong>.')}
+`)
++ card("Chaîne de valeur d'un projet renouvelable","⛓️","var(--teal)",`
+<div style="overflow-x:auto;padding:10px 0"><div style="display:flex;align-items:center;gap:4px;min-width:650px">
+  ${flowBox('Origination','Site, foncier, études','var(--navy)')}${flowArrow()}${flowBox('Développement','Permitting, études, grid','var(--navy-light)')}${flowArrow()}${flowBox('FID','Go/No-go','var(--amber)')}${flowArrow()}${flowBox('Construction','EPC, procurement','var(--teal)')}${flowArrow()}${flowBox('COD','Mise en service','var(--green)')}${flowArrow()}${flowBox('Exploitation','O&M, monitoring, OT','#0D9488')}${flowArrow()}${flowBox('Vente d\'énergie','Revenue stack, EMS','var(--amber)')}
+</div></div>
+<div class="g2">
+  <div style="background:#FEF2F2;border-radius:6px;padding:10px 14px"><div style="font-size:11.5px;font-weight:700;color:var(--red)">← Phase cash-out (2-7 ans)</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px">Dépenses sans revenus. Capital à risque. Time-to-COD = variable critique.</div></div>
+  <div style="background:#F0FDF4;border-radius:6px;padding:10px 14px"><div style="font-size:11.5px;font-weight:700;color:var(--green)">Phase cash-in (20-35 ans) →</div><div style="font-size:11px;color:var(--text-mid);margin-top:2px">Revenus récurrents. Qualité dépend du revenue stack (secured vs. merchant).</div></div>
+</div>
+`)
++ card("Glossaire structurant","📖","var(--slate)",
+  def('SPV','Special Purpose Vehicle — société projet dédiée à un seul actif. L\'unité de base du M&A dans les renouvelables : on achète/vend le SPV, pas l\'actif physique.')
+  +def('EPC','Engineering, Procurement & Construction — contrat clé en main de construction. Le contractant assume le risque de coût et de délai (lump sum turnkey).')
+  +def('O&M','Operations & Maintenance — maintenance préventive et corrective, surveillance des équipements. Peut être internalisé ou externalisé (OEM ou tiers).')
+  +def('OT','Operational Technology — couche de contrôle temps réel : SCADA, capteurs, automatisation. Critique pour la performance et le monitoring à distance.')
+  +def('EMS','Energy Management System — optimisation en temps réel du dispatch, trading intra-day, participation aux marchés de flexibilité. Le « cerveau » de la valorisation.')
+  +def('COD','Commercial Operation Date — date de mise en service commerciale. Point d\'inflexion cash-out → cash-in.')
+  +def('FID','Final Investment Decision — décision de lancer la construction. Pré-requis : permis, financement, offtake sécurisé.')
+);
+
+CONTENT.market = () => secTitle('01','Marché électrique','Comment se forme le prix de l\'électricité, et pourquoi c\'est le point de départ de toute analyse renouvelable')
++ card("Le merit order : formation des prix spot","📊","var(--navy)",`
+<p>L'électricité se vend sur un marché de gros (wholesale) où le prix est fixé <strong>heure par heure</strong> par le merit order. Les centrales sont classées par coût marginal croissant et appelées dans cet ordre. La dernière unité appelée — la <em>marginale</em> — fixe le prix pour toutes.</p>
+${meritOrderSVG()}
+${callout('key','🔑','<strong>Conséquence fondamentale :</strong> les ENR (coût marginal ≈ 0) sont toujours appelées en premier. Elles ne fixent pas le prix — elles le subissent. Leur rentabilité dépend du prix fixé par les fossiles marginales. Plus il y a d\'ENR, plus elles poussent les fossiles hors du merit order → le prix baisse → <strong>effet de cannibalization</strong>.')}
+`)
++ card("Duck curve et volatilité intra-day","🦆","var(--amber)",`
+<p>La pénétration massive du solaire crée un profil caractéristique de la demande résiduelle (demande brute – production ENR), surnommé la « duck curve » :</p>
+${duckCurveSVG()}
+${callout('info','💡','<strong>Pourquoi c\'est stratégique :</strong> La duck curve crée un spread intra-day entre prix creux (midi) et prix peak (rampe du soir). Ce spread est la raison d\'être économique du <strong>stockage batterie</strong> : acheter aux creux, revendre aux peaks.')}
+`)
++ card("Capture price vs. wholesale price","⚠️","var(--red)",`
+<p>La distinction la plus critique pour la rentabilité réelle :</p>
+<div class="g2">
+  <div class="block block-top" style="background:var(--navy)08;border-top-color:var(--navy)"><div style="font-weight:700;font-size:13px;color:var(--navy)">Prix wholesale moyen</div><div style="font-size:11.5px;color:var(--text-mid);margin-top:4px;line-height:1.55">Moyenne arithmétique du prix spot sur toutes les heures (baseload). Le prix « titre » du marché.</div></div>
+  <div class="block block-top" style="background:var(--amber)12;border-top-color:var(--amber)"><div style="font-weight:700;font-size:13px;color:var(--amber)">Capture price</div><div style="font-size:11.5px;color:var(--text-mid);margin-top:4px;line-height:1.55">Moyenne du prix spot <strong>pondérée par le profil de production</strong> réel. Le prix que le producteur capte <em>réellement</em>. Toujours ≤ wholesale pour ENR.</div></div>
+</div>
+<p>Le <strong>capture ratio</strong> = capture price / wholesale price. Un ratio de 0.75 = le solaire ne capte que 75% du prix moyen. Ce ratio se dégrade avec la pénétration — c'est la <strong>cannibalization</strong>.</p>
+<div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;margin:10px 0;padding:12px;background:#FFF7ED;border-radius:6px;border:1px solid #FED7AA">
+  ${flowBox('+ de solaire','','#D97706')}${flowArrow()}${flowBox('Production corrélée','','#B45309')}${flowArrow()}${flowBox('Prix bas midi','','#92400E')}${flowArrow()}${flowBox('Capture price ↓','','#78350F')}
+</div>
+${expand('📐 Prix négatifs — quand le producteur paie pour injecter','<p>Dans les marchés matures (Allemagne, Espagne, Australie), les prix spot deviennent <strong>négatifs</strong> certaines heures : les producteurs <em>paient</em> pour injecter. Raison : production ENR + nucléaire (inflexible) > demande, et les coûts d\'arrêt/redémarrage > perte liée aux prix négatifs.</p><p style="margin-top:8px"><strong>Impact :</strong> les contrats CfD/complément de rémunération suspendent souvent les paiements pendant les heures de prix négatifs. Un projet avec 5-10% d\'heures à prix négatif voit sa rentabilité significativement impactée.</p>')}
+${expand('📐 Basis risk et marchés zonaux','<p>Dans un marché <strong>zonal</strong> (Nordics, Italie), le prix diffère par zone géographique selon les congestions réseau. Le <strong>basis risk</strong> = risque que le prix local ≠ le prix du contrat de couverture (souvent indexé sur le prix national/hub). Un PPA indexé sur le prix national ne protège pas contre un effondrement local.</p>')}
+`);
+
+function techCard(name, icon, color, kpis, strengths, risks, so_what) {
+  let kpiHtml = kpis.map(([k,v,n],i) => `<div class="kpi-row"><div class="kpi-label" style="color:${color}">${k}</div><div class="kpi-value">${v}</div><div class="kpi-note">${n}</div></div>`).join('');
+  return card(`${icon} ${name}`, icon, color, `
+<div class="kpi-table">${kpiHtml}</div>
+<div class="g2">
+  <div class="pros"><div class="h">✓ Forces</div><div class="txt">${strengths}</div></div>
+  <div class="cons"><div class="h">✗ Risques</div><div class="txt">${risks}</div></div>
+</div>
+${callout('so','→','<strong>So what :</strong> '+so_what)}
+`, false);
 }
 
-function SectionMarket() {
-  return (<>
-    <SectionTitle num="01" title="Marché électrique" subtitle="Comment se forme le prix de l'électricité, et pourquoi c'est le point de départ de toute analyse renouvelable" />
-    <Card title="Le merit order : formation des prix spot" icon="📊" accent={C.navy}>
-      <p>L'électricité se vend sur un marché de gros (wholesale) où le prix est fixé <strong>heure par heure</strong> par le merit order. Les centrales sont classées par coût marginal croissant et appelées dans cet ordre jusqu'à satisfaire la demande. La dernière unité appelée — la <em>marginale</em> — fixe le prix pour toutes.</p>
-      <MeritOrderSVG />
-      <Callout type="key"><strong>Conséquence fondamentale :</strong> les ENR (coût marginal ≈ 0) sont toujours appelées en premier. Elles ne fixent pas le prix — elles le subissent. Leur rentabilité dépend du prix fixé par les fossiles marginales. Plus il y a d'ENR, plus elles poussent les fossiles hors du merit order → le prix baisse → <strong>effet de cannibalization</strong>.</Callout>
-    </Card>
-    <Card title="Duck curve et volatilité intra-day" icon="🦆" accent={C.amber}>
-      <p>La pénétration massive du solaire crée un profil caractéristique de la demande résiduelle (demande brute – production ENR), surnommé la « duck curve » :</p>
-      <DuckCurveSVG />
-      <Callout type="info"><strong>Pourquoi c'est stratégique :</strong> La duck curve crée un spread intra-day entre prix creux (midi) et prix peak (rampe du soir). Ce spread est la raison d'être économique du <strong>stockage batterie</strong> : acheter aux creux, revendre aux peaks.</Callout>
-    </Card>
-    <Card title="Capture price vs. wholesale price" icon="⚠️" accent={C.red}>
-      <p>La distinction la plus critique pour la rentabilité réelle :</p>
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, margin: "12px 0" }}>
-        <div style={{ background: C.navy+"08", borderRadius: 8, padding: 14, borderTop: "3px solid "+C.navy }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: C.navy }}>Prix wholesale moyen</div>
-          <div style={{ fontSize: 11.5, color: C.textMid, marginTop: 4, lineHeight: 1.55 }}>Moyenne arithmétique du prix spot sur toutes les heures (baseload). Le prix « titre » du marché.</div>
-        </div>
-        <div style={{ background: C.amber+"12", borderRadius: 8, padding: 14, borderTop: "3px solid "+C.amber }}>
-          <div style={{ fontWeight: 700, fontSize: 13, color: C.amber }}>Capture price</div>
-          <div style={{ fontSize: 11.5, color: C.textMid, marginTop: 4, lineHeight: 1.55 }}>Moyenne du prix spot <strong>pondérée par le profil de production</strong> réel. Le prix que le producteur capte <em>réellement</em>. Toujours ≤ wholesale pour ENR.</div>
-        </div>
-      </div>
-      <p>Le <strong>capture ratio</strong> = capture price / wholesale price. Un ratio de 0.75 = le solaire ne capte que 75% du prix moyen. Ce ratio se dégrade avec la pénétration — c'est la <strong>cannibalization</strong>.</p>
-      <div style={{ display: "flex", alignItems: "center", gap: 4, flexWrap: "wrap", margin: "10px 0", padding: 12, background: "#FFF7ED", borderRadius: 6, border: "1px solid #FED7AA" }}>
-        <FlowBox label="+ de solaire" color="#D97706" small/>
-        <FlowArrow/>
-        <FlowBox label="Production corrélée" color="#B45309" small/>
-        <FlowArrow/>
-        <FlowBox label="Prix bas midi" color="#92400E" small/>
-        <FlowArrow/>
-        <FlowBox label="Capture price ↓" color="#78350F" small/>
-      </div>
-      <ExpandBlock title="📐 Prix négatifs — quand le producteur paie pour injecter">
-        <p>Dans les marchés matures (Allemagne, Espagne, Australie), les prix spot deviennent <strong>négatifs</strong> certaines heures : les producteurs <em>paient</em> pour injecter. Raison : production ENR + nucléaire (inflexible) &gt; demande, et les coûts d'arrêt/redémarrage &gt; perte liée aux prix négatifs.</p>
-        <p style={{marginTop:8}}><strong>Impact :</strong> les contrats CfD/complément de rémunération suspendent souvent les paiements pendant les heures de prix négatifs. Un projet avec 5-10% d'heures à prix négatif voit sa rentabilité significativement impactée.</p>
-      </ExpandBlock>
-      <ExpandBlock title="📐 Basis risk et marchés zonaux">
-        <p>Dans un marché <strong>zonal</strong> (Nordics, Italie), le prix diffère par zone géographique selon les congestions réseau. Le <strong>basis risk</strong> = risque que le prix local ≠ le prix du contrat de couverture (souvent indexé sur le prix national/hub). Un PPA indexé sur le prix national ne protège pas contre un effondrement local.</p>
-      </ExpandBlock>
-    </Card>
-  </>);
+CONTENT.tech = () => secTitle('02','Technologies','Solaire PV, éolien onshore et stockage batterie — les trois actifs du périmètre Akuo')
++ techCard('Solaire PV','☀️','#D97706',[['Load factor','12-22%','Ratio énergie produite / capacité max théorique'],['CAPEX','500-700 €/kWc','Utility-scale, 2025'],['LCOE','30-55 €/MWh','Plus bas que le CCGT dans la plupart des marchés'],['Durée de vie','30-35 ans','Dégradation ~0.4%/an'],['Time to permit','1-4 ans','1 an Pologne, 3-4 ans France']],'LCOE le plus bas, rapidité de construction (6-12 mois post-FID), modularité (1 MW à 500 MW), risque technique quasi-nul.','Cannibalization forte (capture ratio en baisse), production concentrée midi, dépendance foncière (5-7 ha/MWc).','Technologie par défaut. La question est « à quel capture price » et « quelle route-to-market pour protéger les revenus ».')
++ techCard('Éolien onshore','🌬️','#0369A1',[['Load factor','22-35%','Dépend du site et hauteur de mât'],['CAPEX','1 000-1 400 €/kW','Turbines 5-7 MW onshore, 2025'],['LCOE','40-70 €/MWh','Plus élevé mais meilleur capture price'],['Durée de vie','25-30 ans','Repowering possible à mi-vie'],['Time to permit','3-7 ans','Goulot n°1 en Europe de l\'Ouest']],'Profil complémentaire au solaire (hiver, nuit) → meilleur capture ratio. Repowering des sites matures = pipeline à moindre risque.','Acceptabilité sociale (bruit, paysage, biodiversité), permitting long et contentieux, recours juridiques (~20-30% annulation en France).','Moins de volume que le solaire, mais capture price supérieur. Le right to win dépend de la capacité locale de permitting.')
++ techCard('Stockage batterie (BESS)','🔋','#7C3AED',[['Technologie','Li-ion LFP','Dominant pour stationnaire (durée, sécurité, coût)'],['CAPEX','200-350 €/kWh','Divisé par 3 en 5 ans'],['Durée typique','1-4 heures','2h standard, 4h pour capacity/arbitrage'],['Cycles de vie','5 000-8 000','~15-20 ans pour 1 cycle/jour'],['Revenue model','Value stacking','Empilement de services multiples']],'Actif de flexibilité par excellence. Multiples revenue streams (arbitrage, FCR, aFRR, capacity, tolling). Co-location = améliore le capture price du parc ENR.','Business model complexe, revenues non contractualisables long terme (sauf tolling), dégradation des ancillary revenues avec montée BESS installé.','Pas une 4ème technologie comparable — c\'est un actif d\'optimisation de portefeuille. Sa valeur dépend du market design et de la volatilité des prix.')
++ card("Co-location et actifs hybrides","🔗","var(--teal)",`
+<p>La <strong>co-location</strong> = stockage installé sur le même site qu'un parc ENR, partageant le raccordement réseau. Triple avantage :</p>
+<div class="g3">
+  <div class="block block-top" style="background:var(--amber)08;border-top-color:var(--amber)"><div style="font-weight:700;font-size:11.5px;color:var(--amber);margin-bottom:4px">Capture price amélioré</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">Le BESS stocke la surproduction midi et revend au peak du soir → le parc capte le prix peak.</div></div>
+  <div class="block block-top" style="background:var(--teal)08;border-top-color:var(--teal)"><div style="font-weight:700;font-size:11.5px;color:var(--teal);margin-bottom:4px">Coûts partagés</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">Un seul raccordement, un seul poste de transfo, un seul O&M → économies CAPEX + OPEX.</div></div>
+  <div class="block block-top" style="background:var(--green)08;border-top-color:var(--green)"><div style="font-weight:700;font-size:11.5px;color:var(--green);margin-bottom:4px">Curtailment évité</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">Si le réseau sature, le BESS absorbe l'excédent au lieu de le perdre.</div></div>
+</div>`);
+
+CONTENT.revenue = () => secTitle('03','Revenue stack','Les quatre routes-to-market — du plus sécurisé au plus exposé au prix de marché')
++ `<div class="card"><div class="card-header" style="background:var(--green)08"><span class="icon">💰</span><span class="title" style="color:var(--green)">L'empilement des revenus</span></div><div class="card-body no-pad"><div style="padding:16px 22px"><p>Le <strong>revenue stack</strong> = combinaison de contrats et d'expositions de marché qui monétisent la production. Axe n°3 de la segmentation CVA.</p></div>`
++ [{l:"Support public / auction",r:1,c:"var(--green)",b:"Très élevée",d:"Tarif garanti par appel d'offres public : FiT, CfD ou complément de rémunération. Durée 15-20 ans. Revenus totalement prévisibles.",det:"FiT = tarif fixe complet. CfD = strike price, settlement vs. spot. Complément de rémunération = prime au-dessus du spot (France, CRE)."},{l:"PPA privé (corporate / utility)",r:2,c:"var(--teal)",b:"Élevée",d:"Contrat bilatéral long terme (7-15 ans) avec industriel ou utility. Prix fixe ou indexé.",det:"Structures : pay-as-produced (risque volume au buyer), baseload PPA (profil plat → balancing), virtual/financial PPA (settlement financier). Qualité counterparty = bankabilité."},{l:"Hybride (secured + merchant)",r:3,c:"var(--amber)",b:"Modérée",d:"Part contractualisée + part en exposition merchant. Équilibre risque/upside.",det:"Ratio typique 50-70% secured / 30-50% merchant. La partie secured bankabilise, la partie merchant offre l'upside."},{l:"Merchant + value stacking",r:4,c:"var(--red)",b:"Faible",d:"100% exposé au prix spot. Pas de contrat long terme.",det:"Vente day-ahead ou intra-day + ancillary services (FCR/aFRR/mFRR) + capacity market + tolling. Le value stacking = empiler ces revenus."}].map((r,i)=>`<div class="rev-strip"><div class="rev-inner"><div class="rev-bar" style="background:${r.c}"></div><div class="rev-content"><div class="rev-header"><div style="font-weight:700;font-size:14px;color:${r.c}">${r.l}</div><div style="display:flex;gap:8px;align-items:center"><span style="font-size:10.5px;color:var(--text-light)">Risque</span><span class="rev-risk">${'●●●●'.split('').map((_,j)=>`<span style="color:${j<r.r?r.c:'var(--border-light)'}">●</span>`).join('')}</span><span style="font-size:10.5px;color:var(--text-light);margin-left:8px">Bankabilité : <strong>${r.b}</strong></span></div></div><p style="font-size:12.5px;line-height:1.6;color:var(--text);margin:0">${r.d}</p>${expand('Détail : structures et mécanismes','<p>'+r.det+'</p>')}</div></div></div>`).join('')
++ `<div class="rev-footer"><span>← Visibilité long terme · Bankabilité · Levier dette élevé</span><span>Upside potentiel · Exposition prix · Compétences trading →</span></div></div></div>`
++ card("Glossaire des mécanismes","📖","var(--slate)",
+  def('FiT','Feed-in Tariff — tarif d\'achat garanti 15-20 ans. En voie de disparition pour les grandes centrales.')
+  +def('CfD','Contract for Difference — strike price fixé par auction, settlement vs. spot. Protège producteur ET consommateur.')
+  +def('Ancillary services','FCR (fréquence primaire, secondes), aFRR (réserve automatique, minutes), mFRR (réserve manuelle). Le BESS excelle sur FCR/aFRR.')
+  +def('Capacity market','Rémunération pour être disponible en cas de pic. UK, France, Pologne.')
+  +def('Tolling','Le propriétaire du BESS met l\'actif à disposition d\'un trader contre un loyer fixe.')
+  +def('Shape risk','Décalage profil production (intermittent) vs. profil livraison (baseload PPA). Coût de balancing.')
+);
+
+function entryRoute(icon, label, color, desc, pros, cons, metric) {
+  return `<div class="entry-card" style="border:1px solid ${color}22"><div class="entry-left" style="background:${color}"><span class="ico">${icon}</span><div class="lbl">${label}</div></div><div class="entry-right"><p style="font-size:12.5px;line-height:1.6;color:var(--text);margin:0 0 10px">${desc}</p><div class="g2"><div class="pros"><div class="h">✓ Avantages</div><div class="txt">${pros}</div></div><div class="cons"><div class="h">✗ Limites</div><div class="txt">${cons}</div></div></div><div class="metric-badge" style="background:${color}0A;color:${color}">${metric}</div></div></div>`;
 }
 
-function SectionTech() {
-  const techs = [
-    { name: "Solaire PV", icon: "☀️", color: "#D97706",
-      kpis: [["Load factor","12-22%","Ratio énergie produite / capacité max théorique"],["CAPEX","500-700 €/kWc","Utility-scale, 2025"],["LCOE","30-55 €/MWh","Plus bas que le CCGT dans la plupart des marchés"],["Durée de vie","30-35 ans","Dégradation ~0.4%/an"],["Time to permit","1-4 ans","1 an Pologne, 3-4 ans France"]],
-      strengths: "LCOE le plus bas, rapidité de construction (6-12 mois post-FID), modularité (1 MW à 500 MW), risque technique quasi-nul.",
-      risks: "Cannibalization forte (capture ratio en baisse), production concentrée midi, dépendance foncière (5-7 ha/MWc).",
-      so_what: "Technologie par défaut. La question est « à quel capture price » et « quelle route-to-market pour protéger les revenus »." },
-    { name: "Éolien onshore", icon: "🌬️", color: "#0369A1",
-      kpis: [["Load factor","22-35%","Dépend du site et hauteur de mât"],["CAPEX","1 000-1 400 €/kW","Turbines 5-7 MW onshore, 2025"],["LCOE","40-70 €/MWh","Plus élevé mais meilleur capture price"],["Durée de vie","25-30 ans","Repowering possible à mi-vie"],["Time to permit","3-7 ans","Goulot n°1 en Europe de l'Ouest"]],
-      strengths: "Profil complémentaire au solaire (hiver, nuit) → meilleur capture ratio. Repowering des sites matures = pipeline à moindre risque.",
-      risks: "Acceptabilité sociale (bruit, paysage, biodiversité), permitting long et contentieux, recours juridiques (~20-30% annulation en France).",
-      so_what: "Moins de volume que le solaire, mais capture price supérieur. Le right to win dépend de la capacité locale de permitting." },
-    { name: "Stockage batterie (BESS)", icon: "🔋", color: "#7C3AED",
-      kpis: [["Technologie","Li-ion LFP","Dominant pour stationnaire (durée, sécurité, coût)"],["CAPEX","200-350 €/kWh","Divisé par 3 en 5 ans"],["Durée typique","1-4 heures","2h standard, 4h pour capacity/arbitrage"],["Cycles de vie","5 000-8 000","~15-20 ans pour 1 cycle/jour"],["Revenue model","Value stacking","Empilement de services multiples"]],
-      strengths: "Actif de flexibilité par excellence. Multiples revenue streams (arbitrage, FCR, aFRR, capacity, tolling). Co-location = améliore le capture price du parc ENR.",
-      risks: "Business model complexe, revenues non contractualisables long terme (sauf tolling), dégradation des ancillary revenues avec montée BESS installé.",
-      so_what: "Pas une 4ème technologie comparable — c'est un actif d'optimisation de portefeuille. Sa valeur dépend du market design et de la volatilité des prix." },
+CONTENT.lifecycle = () => secTitle('04','Cycle de projet & entry routes','Les trois chemins pour constituer un portefeuille et les métriques de coût / temps associées')
++ card("Les 3 entry routes","🔄","var(--navy)",
+  entryRoute('🌱','Greenfield','var(--green)','Développement from scratch : site, foncier (bail emphytéotique 30-40 ans), permis, raccordement, construction.','Meilleur contrôle sur design et coûts. Marge de développement captée. Calibrage actif sur le revenue stack visé.','Time-to-COD long (3-7 ans). DEVEX à risque si le projet échoue. Hit rate < 100%.','DEVEX : 30-100 k€/MW · Hit rate : 30-70%')
+  +entryRoute('🔧','Brownfield / Repowering','var(--teal)','Reprendre un site existant pour moderniser (repowering = remplacement turbines) ou augmenter la capacité. Foncier sécurisé, grid existant, permitting simplifié.','Time-to-COD réduit (1-3 ans). Risque permitting atténué. Repowering éolien peut doubler la production avec moins de turbines.','Disponibilité limitée (parc vieillissant). Négociation propriétaire. Contraintes techniques héritées.','DEVEX : 15-50 k€/MW · Time-to-COD : 1-3 ans')
+  +entryRoute('🤝','M&A / Platform build-up','var(--navy)','Racheter des SPV (projets), un portefeuille d\'actifs ou une plateforme entière (équipe + pipeline + actifs). Accès instantané au marché.','Pas de time-to-COD pour actifs en opération. Pipeline dérisqué. Acquisition équipe locale. Parfois seul moyen d\'entrer dans un nouveau marché.','Prime d\'acquisition. Risque d\'intégration. Due diligence coûteuse.','Premium : 100-300 k€/MW (RTB) · Closing : 3-6 mois')
+  +callout('key','🔑','<strong>Question n°5 de la RFP :</strong> le ratio optimal greenfield / M&A par pays dépend du time-to-market cible, de la capacité locale de développement, du prix des actifs et de la maturité du pipeline existant.')
+)
++ card("Métriques de coût et de temps","📐","var(--teal)",
+  def('DEVEX','Development Expenditure — coûts pré-FID : études, permitting, foncier, consultants, juridique. 2-5% du CAPEX. Capital 100% à risque.')
+  +def('CAPEX','Capital Expenditure — coût de construction : équipements, BOS, EPC, raccordement. En €/kWc, €/kW ou €/kWh.')
+  +def('OPEX','Coûts d\'exploitation annuels : O&M, assurance, loyer foncier, monitoring, taxes. Internalisation O&M = -15-25% vs. contrat externe.')
+  +def('Hit rate','% de projets atteignant COD. ~30% éolien France → ~70% solaire Pologne. Impacte le coût réel par MW sécurisé.')
+  +def('Time to COD','Durée origination → COD. Chaque mois de retard = DEVEX porté plus longtemps + risque d\'obsolescence conditions marché.')
+);
+
+CONTENT.grid = () => secTitle('05','Réseau & permitting','Les deux goulots d\'étranglement du développement — accès réseau et autorisations administratives')
++ card("Accès au réseau : le goulot critique","🔌","#6B21A8",`
+<p>Un actif ENR ne vaut <em>rien</em> sans connexion réseau. Le raccordement est le facteur limitant n°1 dans de nombreux marchés.</p>
+${def('Grid connection','Raccordement physique au réseau transport (HTA/HTB) ou distribution. Nécessite demande formelle, étude de faisabilité, convention, travaux physiques.')}
+${def('Queue / file d\'attente','Demande >> capacité dans beaucoup de pays. Italie ~200 GW en attente, Grèce ~45 GW. Les « queue raiders » bloquent le système.')}
+${def('Curtailment','Ordre du TSO de réduire/stopper la production quand le réseau sature. 2-8% de production annuelle dans les zones congestionnées = revenus perdus.')}
+${def('TSO / DSO','TSO = réseau haute tension national. DSO = réseau basse/moyenne tension local. ENR utility-scale → TSO ou HTA.')}
+${def('Renforcement réseau','Investissements TSO pour augmenter la capacité de transport. Horizon 5-15 ans. Si à charge du développeur → impact CAPEX.')}
+${callout('warn','⚠️','<strong>Enjeu stratégique :</strong> sécuriser du grid en avance = avantage compétitif majeur. Dans les marchés congestionnés, le point de raccordement peut valoir plus que le projet lui-même. Critère de « right to win » dans le Step 2.')}
+`)
++ card("Permitting : le facteur temps et le facteur pays","📋","var(--navy)",`
+<p>Le permitting est le processus d'obtention des autorisations. C'est le facteur n°1 de différenciation entre marchés.</p>
+<div class="g4">
+  <div class="block block-top" style="background:var(--green)08;border-top-color:var(--green)"><div style="font-size:16px;margin-bottom:4px">🌿</div><div style="font-weight:700;font-size:11.5px;color:var(--green);margin-bottom:4px">Environnement</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">Études d'impact, faune/flore, zones protégées. Friction n°1 pour l'éolien.</div></div>
+  <div class="block block-top" style="background:var(--teal)08;border-top-color:var(--teal)"><div style="font-size:16px;margin-bottom:4px">🏘️</div><div style="font-weight:700;font-size:11.5px;color:var(--teal);margin-bottom:4px">Urbanisme</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">PLU/POS, distances, hauteur, zones agricoles. Baux emphytéotiques.</div></div>
+  <div class="block block-top" style="background:#6B21A808;border-top-color:#6B21A8"><div style="font-size:16px;margin-bottom:4px">⚡</div><div style="font-weight:700;font-size:11.5px;color:#6B21A8;margin-bottom:4px">Raccordement</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">Convention TSO/DSO, étude de capacité, contribution aux travaux.</div></div>
+  <div class="block block-top" style="background:var(--red)08;border-top-color:var(--red)"><div style="font-size:16px;margin-bottom:4px">⚖️</div><div style="font-weight:700;font-size:11.5px;color:var(--red);margin-bottom:4px">Recours</div><div style="font-size:11px;color:var(--text-mid);line-height:1.5">70%+ des éoliens français → recours. Durée 18-24 mois.</div></div>
+</div>
+${callout('so','→','<strong>So what :</strong> Un marché avec LCOE attractif mais 6 ans de permitting et 30% hit rate peut être moins rentable qu\'un marché plus cher avec 2 ans et 70%. Le Step 1 évalue la « regulatory and execution risk » pour filtrer en amont.')}
+`);
+
+CONTENT.finance = () => secTitle('06','Finance de projet','IRR, WACC, hurdle rates et structure de financement — les concepts qui déterminent le go/no-go')
++ card("Métriques de rentabilité","📈","var(--navy)",
+  def('Project IRR','Taux qui annule la VAN des cash flows projet. Rentabilité intrinsèque avant levier. Benchmark : 6-10% unlevered.')
+  +def('Equity IRR','IRR sur les seuls flux actionnaire (après dette). Plus élevé grâce au levier. Benchmark : 8-14%. KPI n°1.')
+  +def('Hurdle rate','Rentabilité minimum exigée. Varie par pays, technologie, revenue stack. IRR < hurdle → no-go.')
+  +def('WACC','Coût moyen pondéré du capital. Avantage compétitif structurel : WACC 5% vs. 7% = différence entre gagner ou perdre un auction. Ardian améliore le WACC d\'Akuo.')
+  +def('LCOE','Levelized Cost of Energy = (CAPEX + OPEX + financement) / MWh sur la durée de vie. LCOE < capture price = marge positive.')
+  +def('DSCR','Debt Service Coverage Ratio. Minimum 1.2x exigé par les prêteurs. Contrainte sur le levier maximum.')
+)
++ card("Structure de financement type","🏦","var(--teal)",`
+<p>Les projets ENR sont financés en <strong>project finance</strong> (non-recourse) : la dette est portée par le SPV, remboursée par les cash flows, sans recours sur le bilan du sponsor.</p>
+<div style="display:flex;gap:16px;margin:14px 0;flex-wrap:wrap">
+  <div style="flex:1;min-width:180px;background:#EFF6FF;border-radius:8px;padding:16px;text-align:center"><div style="font-size:32px;font-weight:800;color:#1E40AF;font-family:'DM Mono',monospace">70-85%</div><div style="font-size:13px;font-weight:700;color:#1E40AF;margin-top:2px">Dette senior</div><div style="font-size:11px;color:var(--text-mid);margin-top:6px;line-height:1.5;text-align:left">Banques, fonds dette infra, green bonds. Taux : Euribor + 120-200 bps. Durée 15-20 ans.</div></div>
+  <div style="flex:1;min-width:180px;background:#F0FDF4;border-radius:8px;padding:16px;text-align:center"><div style="font-size:32px;font-weight:800;color:var(--green);font-family:'DM Mono',monospace">15-30%</div><div style="font-size:13px;font-weight:700;color:var(--green);margin-top:2px">Equity sponsor</div><div style="font-size:11px;color:var(--text-mid);margin-top:6px;line-height:1.5;text-align:left">IPP (Akuo) + fonds infra (Ardian). Capital à risque — dernier remboursé, premier impacté.</div></div>
+</div>
+${callout('key','🔑','<strong>Bankabilité :</strong> CfD 20 ans = levier 80-85%. 100% merchant = levier 50-60% max. La différence impacte directement l\'equity IRR. C\'est pourquoi le revenue stack est un axe de segmentation.')}
+`);
+
+CONTENT.competition = () => secTitle('07','Concurrence & consolidation','Qui sont les acteurs, comment le marché se structure, et où Akuo se positionne')
++ card("Typologie des acteurs","🏢","var(--navy)",`
+<div class="g2">
+  ${[{t:"Utilities intégrées",ex:"EDF RE, Iberdrola, Enel, Ørsted, RWE",d:"Bilan massif, WACC bas, trading desk intégré. Lents et bureaucratiques.",c:"#1E40AF",tg:"WACC advantage"},{t:"Grands IPP indépendants",ex:"Neoen, Voltalia, BayWa r.e., ERG",d:"Agilité + accès capital. Peer group direct d'Akuo. Spécialisés par région/techno.",c:"var(--green)",tg:"Peer group Akuo"},{t:"Développeurs purs / locaux",ex:"Nombreux acteurs par pays",d:"Équipes légères, connaissance terrain. Vendent les projets. Cibles M&A naturelles.",c:"var(--amber)",tg:"M&A targets"},{t:"Fonds infra",ex:"Ardian, Brookfield, Macquarie, GIP",d:"Capital patient, objectifs 8-12% net IRR. Assemblent des plateformes. Ardian = sponsor Akuo.",c:"#7C3AED",tg:"Sponsor Akuo"}].map(a=>`<div class="block block-top" style="border-top-color:${a.c};border:1px solid ${a.c}20;border-top:3px solid ${a.c}">${tag(a.tg,a.c.replace('var(--green)','#2A7F62').replace('var(--amber)','#D4952A'))}<div style="font-weight:700;font-size:13.5px;color:${a.c};margin:6px 0 2px">${a.t}</div><div style="font-size:10.5px;color:var(--text-light);font-style:italic;margin-bottom:6px">${a.ex}</div><div style="font-size:11.5px;color:var(--text);line-height:1.55">${a.d}</div></div>`).join('')}
+</div>
+${callout('warn','⚠️','<strong>Consolidation :</strong> les développeurs purs n\'ont pas les bilans pour l\'equity at stake. Les utilities rachètent du pipeline. Les fonds assemblent des plateformes. Akuo+Ardian doit se positionner comme <strong>consolidateur</strong> ou risque de devenir cible.')}
+`)
++ card("Right to win — concept clé du Step 2","🎯","var(--teal)",`
+<p>Le right to win évalue la capacité <em>réelle</em> d'Akuo à performer dans un segment, benchmarqué contre les meilleurs locaux.</p>
+<div class="g3">
+  ${[{t:"Capabilities",items:["Force équipe locale","Track record permitting","Relations politiques/admin","Sourcing foncier"],c:"var(--navy)"},{t:"Market access",items:["Réseau PPAs/offtakers","Position queues grid","Accès aux auctions","Partenariats locaux"],c:"var(--teal)"},{t:"Operating model",items:["Développement internalisé ?","EPC géré en interne ?","O&M / OT maîtrisé ?","Energy management propre ?"],c:"var(--amber)"}].map(col=>`<div class="block block-top" style="background:${col.c}06;border-top-color:${col.c}"><div style="font-weight:700;font-size:12px;color:${col.c};margin-bottom:8px">${col.t}</div>${col.items.map(it=>`<div class="dot-item"><div class="dot" style="background:${col.c}"></div>${it}</div>`).join('')}</div>`).join('')}
+</div>
+`);
+
+CONTENT.portfolio = () => secTitle('08','Effets de portefeuille','Pourquoi l\'assemblage du portefeuille compte autant que la qualité individuelle des projets')
++ card("Diversification et complémentarité","🧩","var(--navy)",`
+<p>Un portefeuille d'actifs ENR n'est pas une simple somme de projets. Les <strong>effets de portefeuille</strong> créent (ou détruisent) de la valeur au niveau agrégé :</p>
+<div class="g2">
+  ${[{t:"Diversification géographique",d:"Corrélation météo faible entre pays → volatilité production réduite → meilleur profil cash flow → WACC réduit.",i:"🌍",c:"var(--navy)"},{t:"Complémentarité technologique",d:"Solaire (diurne, été) + éolien (variable, hiver) = profil plus plat → capture price moyen supérieur.",i:"⚡",c:"var(--teal)"},{t:"Route-to-market synergies",d:"Portefeuille diversifié = PPAs shaped possibles → meilleure valorisation. L'EMS optimise au niveau portefeuille.",i:"💰",c:"var(--amber)"},{t:"Absorption coûts fixes",d:"Country manager + bureau coûtent autant pour 50 MW que 500 MW. Taille critique par pays = enjeu de profitabilité.",i:"📊",c:"var(--red)"}].map(it=>`<div class="block block-left" style="border-left-color:${it.c};border:1px solid ${it.c}20;border-left:4px solid ${it.c}"><div style="display:flex;gap:8px;align-items:center;margin-bottom:6px"><span style="font-size:18px">${it.i}</span><span style="font-weight:700;font-size:13px;color:${it.c}">${it.t}</span></div><div style="font-size:12px;color:var(--text);line-height:1.6">${it.d}</div></div>`).join('')}
+</div>
+${callout('akuo','🎯','<strong>Trade-off central (question n°9) :</strong> Akuo est dans 3 régions, 10+ pays. Diversification = bénéfices portefeuille mais <strong>coûts fixes de complexité</strong>. L\'enjeu = trouver le point optimal. La méthodologie CVA traite ce sujet dans le Step 3.')}
+`);
+
+CONTENT.akuo = () => secTitle('09','Mission Akuo','Le contexte spécifique de la mission — de la RFP aux questions stratégiques')
++ `<div class="card"><div class="card-header" style="background:var(--navy)08"><span class="icon">🎯</span><span class="title" style="color:var(--navy)">Le défi stratégique</span></div><div class="card-body no-pad">
+<div style="padding:16px 22px"><div class="g3">
+  ${[{l:"Point de départ",c:"var(--navy)",items:["2 GW en opération","Pipeline global","Développeur pur historiquement","Acquisition Ardian juillet 2025","3 régions, 10+ pays"]},{l:"Ambition 2030",c:"var(--teal)",items:["5 GW opération / construction","IPP intégré, equity at stake","Pipeline auto-régénérant","Modèle opérationnel optimisé","Capital allocation disciplinée"]},{l:"Ce qui change",c:"var(--amber)",items:["Critères = IRR vs. marge dev","Besoin de recurring cash flows","WACC = avantage compétitif","Capital à risque → discipline","Consolidation = opportunité"]}].map(col=>`<div class="block block-top" style="background:${col.c}08;border-top-color:${col.c}"><div style="font-weight:700;font-size:13px;color:${col.c};margin-bottom:8px">${col.l}</div>${col.items.map(it=>`<div class="dot-item"><div class="dot" style="background:${col.c}"></div>${it}</div>`).join('')}</div>`).join('')}
+</div></div>
+<div style="background:#FAFBFC;padding:16px 22px;border-top:1px solid var(--border-light)">
+  <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:12px">Les 9 questions stratégiques de la RFP</div>
+  <div class="g2" style="gap:6px 16px">
+    ${[["Sélection pays","Stay / accelerate / exit / enter"],["Forces & faiblesses","Diagnostic par pays"],["Facteurs clés de succès","Position vs. concurrence"],["Cible de pipeline","MW par pays"],["Mix greenfield / M&A","Ratio par pays et techno"],["Rôle dans la consolidation","Consolidateur ou cible ?"],["Make or buy","Dev, EPC, O&M, OT, EMS"],["Effets de portefeuille","Géo, techno, route-to-market"],["Diversification vs. complexité","3 régions, 10+ pays"]].map(([q,d],i)=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);align-items:center"><div class="num-circle" style="background:var(--navy)">${i+1}</div><div><span style="font-weight:600;font-size:12px;color:var(--navy)">${q}</span> <span style="font-size:11px;color:var(--text-light)">— ${d}</span></div></div>`).join('')}
+  </div>
+</div>
+<div style="padding:16px 22px">
+  <div style="font-weight:700;font-size:14px;color:var(--navy);margin-bottom:10px">Périmètre géographique</div>
+  <div class="g2">
+    <div class="block" style="background:var(--navy)08"><div style="font-weight:700;font-size:12px;color:var(--navy);margin-bottom:6px">Groupe A — pays de présence</div><div style="font-size:11.5px;line-height:1.7">${tag('Europe Ouest','#0C2340')} France (+ DOM-TOM), Portugal<br>${tag('Europe Est','#0E7C7B')} Pologne, Croatie, Monténégro, Serbie, Kosovo, Macédoine du Nord, Grèce, Bulgarie<br>${tag('LatAm','#D4952A')} Uruguay, Chili, Rép. Dominicaine<br>${tag('Autre','#64748B')} Nouvelle-Zélande</div></div>
+    <div class="block" style="background:var(--teal)08"><div style="font-weight:700;font-size:12px;color:var(--teal);margin-bottom:6px">Groupe B — pays adjacents</div><div style="font-size:11.5px;line-height:1.7">Italie, Royaume-Uni, Allemagne — et tout autre marché pertinent.<br><br><strong style="color:var(--red)">US hors périmètre</strong> — explicitement exclu.</div></div>
+  </div>
+</div></div></div>`
++ card("Deliverables attendus","📦","var(--teal)",`<div class="g3">
+  ${[{n:"I",t:"State of the Market",d:"Pays par pays : macro, supply/demand, mégatrends, data centers, coûts ENR, grid, régulation, permitting, concurrence.",c:"var(--navy)"},{n:"II",t:"Country Benchmarks",d:"Comparaison inter-pays : équipes, permitting, offtake, soutien politique, coût du capital.",c:"var(--teal)"},{n:"III",t:"Conclusions",d:"Gaps, North Star, postures par pays, technologies, revenue stack, make-or-buy, plan d'implémentation.",c:"var(--amber)"}].map(d=>`<div class="block block-top" style="border-top-color:${d.c};border:1px solid ${d.c}22;border-top:3px solid ${d.c}"><div style="font-weight:800;font-size:20px;color:${d.c};font-family:'DM Mono',monospace">${d.n}</div><div style="font-weight:700;font-size:13px;color:${d.c};margin:4px 0 6px">${d.t}</div><div style="font-size:11px;color:var(--text-mid);line-height:1.55">${d.d}</div></div>`).join('')}
+</div>`);
+
+CONTENT.method = () => {
+  const steps = [
+    {step:"Step 1",title:"Geography filtering",color:"var(--navy)",icon:"🌍",question:"Quels pays sont intrinsèquement attractifs, compatibles avec les guardrails stratégiques et scalables ?",unit:"Géographie + strategic fit",output:"Keep / Reserve / Drop",criteria:[["Market depth & growth","Installé, commissioning, ambitions 2030, CAPEX adressable"],["Power market economics","Wholesale & capture prices, cannibalization, spreads"],["Route-to-market depth","Schemes, PPA depth, merchant feasibility, EMS maturity"],["Regulatory & execution risk","Permitting duration & hit rate, grid access, political support"],["Competition & consolidation","Developer density, utility presence, M&A access"],["Strategic fit & scalability","Recurring origination, footprint relevance, FX, diversification"]],tpl:"Templates 1A + 1B + 1C"},
+    {step:"Step 2",title:"Opportunity filtering",color:"var(--teal)",icon:"🔬",question:"Dans les pays shortlistés, quelles cellules d'opportunité offrent le meilleur fit risque-ajusté ?",unit:"Géo × Techno × Revenue stack × Entry route",output:"Segments prioritaires + mix GF/M&A",criteria:[["Technology-specific viability","Resource, captured price, site availability, repowering"],["Revenue stack attractiveness","Price vs. cost, tenor, counterparty quality, value stacking"],["Entry route attractiveness","DEVEX, time-to-permit, brownfield readiness, M&A availability"],["Capital efficiency & hurdle fit","CAPEX intensity, time to COD, IRR range, downside resilience"],["Portfolio contribution","Diversification, complementarity, synergies, fixed cost absorption"],["Akuo right to win","Local team, permitting, offtake access, role in dev/EPC/O&M/OT/EMS"]],tpl:"Templates 2A + 2B + 2C"},
+    {step:"Step 3",title:"Final intercomparison",color:"var(--amber)",icon:"📋",question:"Comment réconcilier les meilleures opportunités et le footprint actuel en une vue cohérente ?",unit:"Top opportunities + footprint + platform",output:"Posture par pays + ambition + trade-offs",criteria:[["Portfolio optimization","Diversification vs. concentration, corrélation, FX"],["Capital allocation","Par pays/techno/revenue stack, séquencement"],["Operating model","Internalisation vs. externalisation par maillon"],["Implementation roadmap","Actions prioritaires, quick wins vs. structurels"],["Risk management","Scénarios, plan de contingence"],["Ambition setting","MW cibles, milestones 2026-2030"]],tpl:"Consolidation cross-pays"},
   ];
-  return (<>
-    <SectionTitle num="02" title="Technologies" subtitle="Solaire PV, éolien onshore et stockage batterie — les trois actifs du périmètre Akuo" />
-    {techs.map((t,idx)=>(
-      <Card key={idx} title={t.icon+" "+t.name} accent={t.color} noPad>
-        <div style={{padding:"16px 22px"}}>
-          <div style={{background:"#F8FAFC",borderRadius:6,overflow:"hidden",marginBottom:14,border:"1px solid "+C.borderLight}}>
-            {t.kpis.map(([k,v,note],i)=>(
-              <div key={i} style={{display:"flex",padding:"8px 14px",borderBottom:i<t.kpis.length-1?"1px solid "+C.borderLight:"none",alignItems:"center"}}>
-                <div style={{width:120,fontWeight:600,fontSize:11.5,color:t.color,flexShrink:0}}>{k}</div>
-                <div style={{width:120,fontWeight:700,fontSize:12.5,color:C.navy,flexShrink:0,fontFamily:"monospace"}}>{v}</div>
-                <div style={{fontSize:11,color:C.textLight,flex:1}}>{note}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,marginBottom:12}}>
-            <div style={{background:"#F0FDF4",borderRadius:6,padding:"10px 14px"}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.green}}>✓ Forces</div>
-              <div style={{fontSize:11.5,color:C.text,marginTop:3,lineHeight:1.55}}>{t.strengths}</div>
-            </div>
-            <div style={{background:"#FEF2F2",borderRadius:6,padding:"10px 14px"}}>
-              <div style={{fontSize:11,fontWeight:700,color:C.red}}>✗ Risques</div>
-              <div style={{fontSize:11.5,color:C.text,marginTop:3,lineHeight:1.55}}>{t.risks}</div>
-            </div>
-          </div>
-          <Callout type="so"><strong>So what :</strong> {t.so_what}</Callout>
-        </div>
-      </Card>
-    ))}
-    <Card title="Co-location et actifs hybrides" icon="🔗" accent={C.teal}>
-      <p>La <strong>co-location</strong> = stockage installé sur le même site qu'un parc ENR, partageant le raccordement réseau. Triple avantage :</p>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,marginTop:10}}>
-        {[{t:"Capture price amélioré",d:"Le BESS stocke la surproduction midi et revend au peak du soir → le parc capte le prix peak.",c:C.amber},{t:"Coûts partagés",d:"Un seul raccordement, un seul poste de transfo, un seul O&M → économies CAPEX + OPEX.",c:C.teal},{t:"Curtailment évité",d:"Si le réseau sature, le BESS absorbe l'excédent au lieu de le perdre.",c:C.green}].map((item,i)=>(
-          <div key={i} style={{background:item.c+"08",borderRadius:6,padding:12,borderTop:"3px solid "+item.c}}>
-            <div style={{fontWeight:700,fontSize:11.5,color:item.c,marginBottom:4}}>{item.t}</div>
-            <div style={{fontSize:11,color:C.textMid,lineHeight:1.5}}>{item.d}</div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  </>);
+  return secTitle('10','Méthodologie CVA','Notre approche en 3 étapes — de l\'univers pays au plan d\'action par segment')
+  + card("Architecture de la méthodologie","🏛️","var(--navy)",`
+<p style="margin-bottom:14px">Segmentation en <strong>4 axes</strong> converties en une <strong>unité commune d'analyse</strong>, et process en <strong>3 étapes</strong>.</p>
+<div style="background:#F8FAFC;border-radius:8px;padding:16px 20px;border:1px solid var(--border-light);margin-bottom:16px">
+  <div style="font-size:11.5px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Unité commune d'analyse</div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap">
+    ${[{l:"Géographie",s:"Pays / zone",c:"var(--navy)"},{l:"Technologie",s:"Solar / Wind / BESS",c:"var(--teal)"},{l:"Revenue stack",s:"Auction → Merchant",c:"var(--amber)"},{l:"Entry route",s:"GF / BF / M&A",c:"var(--green)"}].map((a,i)=>`<div style="display:flex;align-items:center;gap:6px">${flowBox(a.l,a.s,a.c)}${i<3?'<span style="font-size:18px;color:var(--text-light);font-weight:300">×</span>':''}</div>`).join('')}
+  </div>
+  <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-mid)">Chaque cellule (ex : <em>Pologne × Solaire × PPA privé × Greenfield</em>) est scorée like-for-like</div>
+</div>`)
+  + steps.map(s => card(`${s.icon} ${s.step} — ${s.title}`,s.icon,s.color,`
+<div style="background:${s.color}08;border-radius:6px;padding:10px 14px;margin-bottom:14px;border:1px solid ${s.color}18">
+  <div style="font-size:11px;font-weight:700;color:${s.color};margin-bottom:4px">Question adressée</div>
+  <div style="font-size:12.5px;color:var(--text);font-style:italic;line-height:1.5">${s.question}</div>
+</div>
+<div style="display:flex;gap:12px;margin-bottom:14px">
+  <div style="flex:1;font-size:11.5px"><span style="font-weight:700;color:var(--text-light)">Unité : </span><span>${s.unit}</span></div>
+  <div style="flex:1;font-size:11.5px"><span style="font-weight:700;color:var(--text-light)">Output : </span><span style="color:${s.color};font-weight:600">${s.output}</span></div>
+</div>
+<div style="font-size:11.5px;font-weight:700;color:var(--text-light);margin-bottom:8px">6 critères d'évaluation</div>
+<div class="g2" style="gap:4px 12px">
+  ${s.criteria.map(([name,detail],i)=>`<div style="display:flex;gap:8px;padding:6px 0;border-bottom:1px solid var(--border-light);align-items:flex-start"><div class="num-circle num-circle-sm" style="background:${s.color};margin-top:1px">${i+1}</div><div><div style="font-weight:700;font-size:11.5px;color:var(--navy)">${name}</div><div style="font-size:10.5px;color:var(--text-light);line-height:1.4;margin-top:1px">${detail}</div></div></div>`).join('')}
+</div>
+<div style="margin-top:10px;font-size:11px;color:var(--text-light);font-style:italic">📄 ${s.tpl}</div>
+`)).join('')
+  + callout('so','→','<strong>Logique d\'ensemble :</strong> Step 1 réduit l\'univers pays → Step 2 compare les cellules d\'opportunité → Step 3 réconcilie en portefeuille cohérent. Step 1 = attractivité marché, Step 2 = fit avec Akuo et ses hurdles, Step 3 = cohérence portefeuille et implémentation.');
+};
+
+// ═══════════════════════════════════════════════════
+// RENDER
+// ═══════════════════════════════════════════════════
+
+function render() {
+  const idx = SECTIONS.findIndex(s=>s.id===activeSection);
+
+  // Progress
+  document.getElementById('progress').innerHTML = SECTIONS.map((s,i) =>
+    `<div class="progress-dot ${i<=idx?'active':'inactive'}" onclick="navigate('${s.id}')"></div>`
+  ).join('');
+
+  // Sidebar
+  document.getElementById('sidebar').innerHTML = '<div style="padding:12px 0">' + SECTIONS.map(s =>
+    `<button class="sidebar-btn ${activeSection===s.id?'active':''}" onclick="navigate('${s.id}')"><span class="num">${s.num}</span><span class="lbl">${s.label}</span></button>`
+  ).join('') + '</div>';
+
+  // Content
+  let nav = '<div class="nav-footer">';
+  if(idx>0) nav+=`<button class="nav-btn nav-prev" onclick="navigate('${SECTIONS[idx-1].id}')">← ${SECTIONS[idx-1].label}</button>`;
+  else nav+='<div></div>';
+  if(idx<SECTIONS.length-1) nav+=`<button class="nav-btn nav-next" onclick="navigate('${SECTIONS[idx+1].id}')">${SECTIONS[idx+1].label} →</button>`;
+  else nav+='<div></div>';
+  nav+='</div>';
+
+  document.getElementById('content-inner').innerHTML = CONTENT[activeSection]() + nav;
 }
 
-function SectionRevenue() {
-  return (<>
-    <SectionTitle num="03" title="Revenue stack" subtitle="Les quatre routes-to-market — du plus sécurisé au plus exposé au prix de marché" />
-    <Card title="L'empilement des revenus" icon="💰" accent={C.green} noPad>
-      <div style={{padding:"16px 22px"}}><p>Le <strong>revenue stack</strong> = combinaison de contrats et d'expositions de marché qui monétisent la production. Axe n°3 de la segmentation CVA (Geography × Technology × <strong>Revenue stack</strong> × Entry route).</p></div>
-      {[
-        {label:"Support public / auction",risk:1,color:C.green,bank:"Très élevée",desc:"Tarif garanti par appel d'offres public : FiT, CfD ou complément de rémunération. Durée 15-20 ans. Revenus totalement prévisibles.",detail:"FiT = tarif fixe complet. CfD = strike price, settlement vs. spot. Complément de rémunération = prime au-dessus du spot (France, CRE). Tend à disparaître pour les grandes centrales au profit de mécanismes plus market-based."},
-        {label:"PPA privé (corporate / utility)",risk:2,color:C.teal,bank:"Élevée",desc:"Contrat bilatéral long terme (7-15 ans) avec industriel ou utility. Prix fixe ou indexé.",detail:"Structures : pay-as-produced (risque volume au buyer), baseload PPA (producteur livre un profil plat → balancing nécessaire), virtual/financial PPA (settlement financier, pas de livraison physique — utilisé par corporates multi-sites). La qualité du counterparty (rating crédit) détermine la bankabilité."},
-        {label:"Hybride (secured + merchant)",risk:3,color:C.amber,bank:"Modérée",desc:"Part contractualisée (PPA/auction) + part en exposition merchant. Équilibre risque/upside.",detail:"Ratio typique 50-70% secured / 30-50% merchant. La partie secured bankabilise le projet, la partie merchant offre l'upside. De plus en plus courant : corporates ne veulent pas 100% du volume, et les producteurs veulent garder de l'exposition prix."},
-        {label:"Merchant + value stacking",risk:4,color:C.red,bank:"Faible",desc:"100% exposé au prix spot. Pas de contrat long terme. Revenus dépendent de la volatilité et du niveau des prix.",detail:"Vente day-ahead ou intra-day. Complété par ancillary services (FCR/aFRR/mFRR), capacity market, tolling. Le value stacking = empiler ces revenus. Surtout pertinent pour le BESS."},
-      ].map((r,i)=>(
-        <div key={i} style={{borderBottom:i<3?"1px solid "+C.borderLight:"none"}}>
-          <div style={{display:"flex"}}>
-            <div style={{width:6,background:r.color,flexShrink:0}}/>
-            <div style={{padding:"16px 22px",flex:1}}>
-              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}>
-                <div style={{fontWeight:700,fontSize:14,color:r.color}}>{r.label}</div>
-                <div style={{display:"flex",gap:8,alignItems:"center"}}>
-                  <span style={{fontSize:10.5,color:C.textLight}}>Risque</span>
-                  <span style={{fontFamily:"monospace",fontSize:12}}>{"●●●●".split("").map((d,j)=><span key={j} style={{color:j<r.risk?r.color:C.borderLight}}>●</span>)}</span>
-                  <span style={{fontSize:10.5,color:C.textLight,marginLeft:8}}>Bankabilité : <strong>{r.bank}</strong></span>
-                </div>
-              </div>
-              <p style={{fontSize:12.5,lineHeight:1.6,color:C.text,margin:0}}>{r.desc}</p>
-              <ExpandBlock title="Détail : structures et mécanismes"><p>{r.detail}</p></ExpandBlock>
-            </div>
-          </div>
-        </div>
-      ))}
-      <div style={{padding:"12px 22px",background:"#FAFBFC",display:"flex",justifyContent:"space-between",fontSize:10.5,fontWeight:600,color:C.textLight}}>
-        <span>← Visibilité long terme · Bankabilité · Levier dette élevé</span>
-        <span>Upside potentiel · Exposition prix · Compétences trading →</span>
-      </div>
-    </Card>
-    <Card title="Glossaire des mécanismes" icon="📖" accent={C.slate}>
-      <Def term="FiT">Feed-in Tariff — tarif d'achat garanti 15-20 ans. En voie de disparition pour les grandes centrales.</Def>
-      <Def term="CfD">Contract for Difference — strike price fixé par auction, settlement vs. spot. Protège producteur ET consommateur.</Def>
-      <Def term="Ancillary services">FCR (fréquence primaire, secondes), aFRR (réserve automatique, minutes), mFRR (réserve manuelle). Le BESS excelle sur FCR/aFRR.</Def>
-      <Def term="Capacity market">Rémunération pour être disponible en cas de pic. UK, France, Pologne. Revenue additionnel pour BESS et assets flexibles.</Def>
-      <Def term="Tolling">Le propriétaire du BESS met l'actif à disposition d'un trader contre un loyer fixe. Revenus prévisibles.</Def>
-      <Def term="Shape risk">Décalage profil production (intermittent) vs. profil livraison (baseload PPA). Coût de balancing qui érode la marge.</Def>
-    </Card>
-  </>);
-}
-
-function SectionLifecycle() {
-  return (<>
-    <SectionTitle num="04" title="Cycle de projet & entry routes" subtitle="Les trois chemins pour constituer un portefeuille et les métriques de coût / temps associées" />
-    <Card title="Les 3 entry routes" icon="🔄" accent={C.navy}>
-      {[
-        {icon:"🌱",label:"Greenfield",color:C.green,desc:"Développement from scratch : site, foncier (bail emphytéotique 30-40 ans), permis, raccordement, construction.",pros:"Meilleur contrôle sur design et coûts. Marge de développement captée. Calibrage actif sur le revenue stack visé.",cons:"Time-to-COD long (3-7 ans). DEVEX à risque si le projet échoue. Hit rate < 100%.",metric:"DEVEX : 30-100 k€/MW · Hit rate : 30-70%"},
-        {icon:"🔧",label:"Brownfield / Repowering",color:C.teal,desc:"Reprendre un site existant pour moderniser (repowering = remplacement turbines plus performantes) ou augmenter la capacité. Foncier sécurisé, grid existant, permitting simplifié.",pros:"Time-to-COD réduit (1-3 ans). Risque permitting atténué. En éolien, le repowering peut doubler la production avec moins de turbines.",cons:"Disponibilité limitée (parc vieillissant). Négociation propriétaire. Contraintes techniques héritées.",metric:"DEVEX : 15-50 k€/MW · Time-to-COD : 1-3 ans"},
-        {icon:"🤝",label:"M&A / Platform build-up",color:C.navy,desc:"Racheter des SPV (projets), un portefeuille d'actifs ou une plateforme entière (équipe + pipeline + actifs). Accès instantané au marché.",pros:"Pas de time-to-COD pour les actifs en opération. Pipeline dérisqué. Acquisition équipe locale et relations. Parfois seul moyen d'entrer dans un nouveau marché.",cons:"Prime d'acquisition (marge de dev captée par le vendeur). Risque d'intégration. Due diligence coûteuse.",metric:"Premium : 100-300 k€/MW (ready-to-build) · Closing : 3-6 mois"},
-      ].map((r,i)=>(
-        <div key={i} style={{display:"flex",gap:0,borderRadius:8,overflow:"hidden",border:"1px solid "+r.color+"22",marginBottom:10}}>
-          <div style={{background:r.color,color:"#fff",padding:"16px 14px",minWidth:110,display:"flex",flexDirection:"column",alignItems:"center",justifyContent:"center"}}>
-            <span style={{fontSize:28}}>{r.icon}</span>
-            <div style={{fontWeight:700,fontSize:14,marginTop:6}}>{r.label}</div>
-          </div>
-          <div style={{padding:"14px 18px",flex:1}}>
-            <p style={{fontSize:12.5,lineHeight:1.6,color:C.text,margin:"0 0 10px"}}>{r.desc}</p>
-            <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8,marginBottom:8}}>
-              <div style={{background:"#F0FDF4",borderRadius:6,padding:"8px 12px"}}><div style={{fontSize:10,fontWeight:700,color:C.green}}>✓ Avantages</div><div style={{fontSize:11,color:C.textMid,marginTop:3,lineHeight:1.5}}>{r.pros}</div></div>
-              <div style={{background:"#FEF2F2",borderRadius:6,padding:"8px 12px"}}><div style={{fontSize:10,fontWeight:700,color:C.red}}>✗ Limites</div><div style={{fontSize:11,color:C.textMid,marginTop:3,lineHeight:1.5}}>{r.cons}</div></div>
-            </div>
-            <div style={{fontSize:11,background:r.color+"0A",borderRadius:4,padding:"6px 10px",fontWeight:500,color:r.color,fontFamily:"monospace"}}>{r.metric}</div>
-          </div>
-        </div>
-      ))}
-      <Callout type="key"><strong>Question n°5 de la RFP :</strong> le ratio optimal greenfield / M&A par pays dépend du time-to-market cible, de la capacité locale de développement, du prix des actifs et de la maturité du pipeline existant.</Callout>
-    </Card>
-    <Card title="Métriques de coût et de temps" icon="📐" accent={C.teal}>
-      <Def term="DEVEX">Development Expenditure — coûts pré-FID : études, permitting, foncier, consultants, juridique. 2-5% du CAPEX. Capital 100% à risque.</Def>
-      <Def term="CAPEX">Capital Expenditure — coût de construction : équipements, BOS, EPC, raccordement. En €/kWc, €/kW ou €/kWh.</Def>
-      <Def term="OPEX">Coûts d'exploitation annuels : O&M, assurance, loyer foncier, monitoring, taxes. En €/kW/an ou €/MWh. Internalisation O&M = -15-25% vs. contrat externe.</Def>
-      <Def term="Hit rate">% de projets atteignant COD. ~30% éolien France → ~70% solaire Pologne. Impacte directement le coût réel par MW sécurisé.</Def>
-      <Def term="Time to COD">Durée origination → COD. Chaque mois de retard = DEVEX porté plus longtemps + risque d'obsolescence des conditions marché.</Def>
-    </Card>
-  </>);
-}
-
-function SectionGrid() {
-  return (<>
-    <SectionTitle num="05" title="Réseau & permitting" subtitle="Les deux goulots d'étranglement du développement — accès réseau et autorisations administratives" />
-    <Card title="Accès au réseau : le goulot critique" icon="🔌" accent="#6B21A8">
-      <p>Un actif ENR ne vaut <em>rien</em> sans connexion réseau. Le raccordement est le facteur limitant n°1 dans de nombreux marchés.</p>
-      <Def term="Grid connection">Raccordement physique au réseau transport (HTA/HTB) ou distribution. Nécessite demande formelle, étude de faisabilité, convention, travaux physiques.</Def>
-      <Def term="Queue / file d'attente">Demande >> capacité dans beaucoup de pays. Italie ~200 GW en attente, Grèce ~45 GW. Les « queue raiders » bloquent le système.</Def>
-      <Def term="Curtailment">Ordre du TSO de réduire/stopper la production quand le réseau sature. 2-8% de production annuelle dans les zones congestionnées = revenus perdus.</Def>
-      <Def term="TSO / DSO">TSO = réseau haute tension national. DSO = réseau basse/moyenne tension local. ENR utility-scale → TSO ou HTA.</Def>
-      <Def term="Renforcement réseau">Investissements TSO pour augmenter la capacité de transport. Horizon 5-15 ans. Si à charge du développeur → impact CAPEX.</Def>
-      <Callout type="warn"><strong>Enjeu stratégique :</strong> sécuriser du grid en avance = avantage compétitif majeur. Dans les marchés congestionnés, le point de raccordement peut valoir plus que le projet lui-même. Critère de « right to win » dans le Step 2.</Callout>
-    </Card>
-    <Card title="Permitting : le facteur temps et le facteur pays" icon="📋" accent={C.navy}>
-      <p>Le permitting est le processus d'obtention des autorisations. C'est le facteur n°1 de différenciation entre marchés.</p>
-      <div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,margin:"14px 0"}}>
-        {[{t:"Environnement",d:"Études d'impact, faune/flore, zones protégées. Friction n°1 pour l'éolien.",c:C.green,icon:"🌿"},{t:"Urbanisme",d:"PLU/POS, distances, hauteur, zones agricoles. Baux emphytéotiques.",c:C.teal,icon:"🏘️"},{t:"Raccordement",d:"Convention TSO/DSO, étude de capacité, contribution aux travaux.",c:"#6B21A8",icon:"⚡"},{t:"Recours",d:"Oppositions de tiers. 70%+ des éoliens français font l'objet d'un recours. Durée 18-24 mois.",c:C.red,icon:"⚖️"}].map((item,i)=>(
-          <div key={i} style={{background:item.c+"08",borderRadius:6,padding:12,borderTop:"3px solid "+item.c}}>
-            <div style={{fontSize:16,marginBottom:4}}>{item.icon}</div>
-            <div style={{fontWeight:700,fontSize:11.5,color:item.c,marginBottom:4}}>{item.t}</div>
-            <div style={{fontSize:11,color:C.textMid,lineHeight:1.5}}>{item.d}</div>
-          </div>
-        ))}
-      </div>
-      <Callout type="so"><strong>So what :</strong> Un marché avec un LCOE attractif mais 6 ans de permitting et 30% de hit rate peut être moins rentable qu'un marché plus cher avec 2 ans et 70%. Le Step 1 évalue la « regulatory and execution risk » pour filtrer en amont.</Callout>
-    </Card>
-  </>);
-}
-
-function SectionFinance() {
-  return (<>
-    <SectionTitle num="06" title="Finance de projet" subtitle="IRR, WACC, hurdle rates et structure de financement — les concepts qui déterminent le go/no-go" />
-    <Card title="Métriques de rentabilité" icon="📈" accent={C.navy}>
-      <Def term="Project IRR">Taux qui annule la VAN des cash flows projet (CAPEX → revenus → OPEX sur la durée de vie). Rentabilité intrinsèque avant levier. Benchmark : 6-10% unlevered selon pays/risque.</Def>
-      <Def term="Equity IRR">IRR sur les seuls flux actionnaire (après service dette). Plus élevé grâce au levier. Benchmark : 8-14%. KPI n°1 de décision d'investissement.</Def>
-      <Def term="Hurdle rate">Rentabilité minimum exigée. Varie par pays (risque souverain, FX), technologie (maturité), revenue stack (sécurisation). IRR &lt; hurdle → no-go.</Def>
-      <Def term="WACC">Coût moyen pondéré du capital (equity + dette). Avantage compétitif structurel : WACC à 5% vs. 7% = différence entre gagner ou perdre un auction. Le backing Ardian améliore le WACC d'Akuo.</Def>
-      <Def term="LCOE">Levelized Cost of Energy = (CAPEX amortis + OPEX + financement) / MWh produits sur la durée de vie. LCOE &lt; capture price = marge positive.</Def>
-      <Def term="DSCR">Debt Service Coverage Ratio = cash flow / service dette. Minimum 1.2x exigé par les prêteurs. Contrainte sur le levier maximum.</Def>
-    </Card>
-    <Card title="Structure de financement type" icon="🏦" accent={C.teal}>
-      <p>Les projets ENR sont financés en <strong>project finance</strong> (non-recourse) : la dette est portée par le SPV, remboursée par les cash flows, sans recours sur le bilan du sponsor.</p>
-      <div style={{display:"flex",gap:16,margin:"14px 0",flexWrap:"wrap"}}>
-        <div style={{flex:1,minWidth:180,background:"#EFF6FF",borderRadius:8,padding:16,textAlign:"center"}}>
-          <div style={{fontSize:32,fontWeight:800,color:"#1E40AF",fontFamily:"monospace"}}>70-85%</div>
-          <div style={{fontSize:13,fontWeight:700,color:"#1E40AF",marginTop:2}}>Dette senior</div>
-          <div style={{fontSize:11,color:C.textMid,marginTop:6,lineHeight:1.5,textAlign:"left"}}>Banques, fonds dette infra, green bonds. Taux : Euribor + 120-200 bps. Durée 15-20 ans. Levier dépend de la bankabilité de l'offtake.</div>
-        </div>
-        <div style={{flex:1,minWidth:180,background:"#F0FDF4",borderRadius:8,padding:16,textAlign:"center"}}>
-          <div style={{fontSize:32,fontWeight:800,color:C.green,fontFamily:"monospace"}}>15-30%</div>
-          <div style={{fontSize:13,fontWeight:700,color:C.green,marginTop:2}}>Equity sponsor</div>
-          <div style={{fontSize:11,color:C.textMid,marginTop:6,lineHeight:1.5,textAlign:"left"}}>IPP (Akuo) + fonds infra (Ardian). Capital à risque — dernier remboursé, premier impacté. L'equity IRR est le rendement sur cette tranche.</div>
-        </div>
-      </div>
-      <Callout type="key"><strong>Bankabilité :</strong> CfD 20 ans = levier 80-85%. 100% merchant = levier 50-60% max. La différence de levier impacte directement l'equity IRR. C'est pourquoi le revenue stack est un axe de segmentation.</Callout>
-    </Card>
-  </>);
-}
-
-function SectionCompetition() {
-  return (<>
-    <SectionTitle num="07" title="Concurrence & consolidation" subtitle="Qui sont les acteurs, comment le marché se structure, et où Akuo se positionne" />
-    <Card title="Typologie des acteurs" icon="🏢" accent={C.navy}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"10px 0"}}>
-        {[
-          {t:"Utilities intégrées",ex:"EDF RE, Iberdrola, Enel, Ørsted, RWE",d:"Bilan massif, WACC bas (investment grade), trading desk intégré. Mais lents et bureaucratiques. Actifs en auction.",c:"#1E40AF",tag:"WACC advantage"},
-          {t:"Grands IPP indépendants",ex:"Neoen, Voltalia, BayWa r.e., ERG, Lightsource bp",d:"Agilité + accès capital. Peer group direct d'Akuo. Spécialisés par région/techno. Valorisés sur pipeline + MW.",c:C.green,tag:"Peer group Akuo"},
-          {t:"Développeurs purs / locaux",ex:"Nombreux acteurs par pays",d:"Équipes légères, connaissance terrain. Vendent les projets aux IPP/utilities. Cibles d'acquisition naturelles.",c:C.amber,tag:"M&A targets"},
-          {t:"Fonds infra / financial sponsors",ex:"Ardian, Brookfield, Macquarie, GIP, CDPQ",d:"Capital patient, objectifs 8-12% net IRR. Assemblent des plateformes. Ardian = sponsor d'Akuo.",c:"#7C3AED",tag:"Ardian = sponsor Akuo"},
-        ].map((a,i)=>(
-          <div key={i} style={{borderRadius:8,padding:16,border:"1px solid "+a.c+"20",borderTop:"3px solid "+a.c}}>
-            <MiniTag color={a.c}>{a.tag}</MiniTag>
-            <div style={{fontWeight:700,fontSize:13.5,color:a.c,margin:"6px 0 2px"}}>{a.t}</div>
-            <div style={{fontSize:10.5,color:C.textLight,fontStyle:"italic",marginBottom:6}}>{a.ex}</div>
-            <div style={{fontSize:11.5,color:C.text,lineHeight:1.55}}>{a.d}</div>
-          </div>
-        ))}
-      </div>
-      <Callout type="warn"><strong>Consolidation :</strong> les développeurs purs n'ont pas les bilans pour l'equity at stake. Les utilities rachètent du pipeline. Les fonds assemblent des plateformes. Akuo+Ardian doit se positionner comme <strong>consolidateur</strong> ou risque de devenir cible.</Callout>
-    </Card>
-    <Card title="Right to win — concept clé du Step 2" icon="🎯" accent={C.teal}>
-      <p>Le right to win évalue la capacité <em>réelle</em> d'Akuo à performer dans un segment, benchmarqué contre les meilleurs locaux. Pas « est-ce attractif ? » mais « est-ce qu'Akuo peut y gagner ? »</p>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:8,margin:"12px 0"}}>
-        {[{t:"Capabilities",items:["Force équipe locale","Track record permitting","Relations politiques/admin","Sourcing foncier"],c:C.navy},{t:"Market access",items:["Réseau PPAs/offtakers","Position queues grid","Accès aux auctions","Partenariats locaux"],c:C.teal},{t:"Operating model",items:["Développement internalisé ?","EPC géré en interne ?","O&M / OT maîtrisé ?","Energy management propre ?"],c:C.amber}].map((col,i)=>(
-          <div key={i} style={{background:col.c+"06",borderRadius:6,padding:12,borderTop:"3px solid "+col.c}}>
-            <div style={{fontWeight:700,fontSize:12,color:col.c,marginBottom:8}}>{col.t}</div>
-            {col.items.map((item,j)=><div key={j} style={{fontSize:11,color:C.textMid,padding:"3px 0",display:"flex",gap:6,alignItems:"center"}}><div style={{width:4,height:4,borderRadius:"50%",background:col.c,flexShrink:0}}/>{item}</div>)}
-          </div>
-        ))}
-      </div>
-    </Card>
-  </>);
-}
-
-function SectionPortfolio() {
-  return (<>
-    <SectionTitle num="08" title="Effets de portefeuille" subtitle="Pourquoi l'assemblage du portefeuille compte autant que la qualité individuelle des projets" />
-    <Card title="Diversification et complémentarité" icon="🧩" accent={C.navy}>
-      <p>Un portefeuille d'actifs ENR n'est pas une simple somme de projets. Les <strong>effets de portefeuille</strong> créent (ou détruisent) de la valeur au niveau agrégé :</p>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,margin:"14px 0"}}>
-        {[
-          {t:"Diversification géographique",d:"Corrélation météo faible entre pays → volatilité production réduite → meilleur profil cash flow → meilleur rating crédit → WACC réduit.",icon:"🌍",c:C.navy},
-          {t:"Complémentarité technologique",d:"Solaire (diurne, été) + éolien (variable, hiver) = profil plus plat → capture price moyen du portefeuille supérieur à la somme des individuels.",icon:"⚡",c:C.teal},
-          {t:"Route-to-market synergies",d:"Portefeuille diversifié = PPAs shaped (livraison plus plate) possibles → meilleure valorisation. L'EMS optimise au niveau portefeuille, pas projet par projet.",icon:"💰",c:C.amber},
-          {t:"Absorption coûts fixes",d:"Country manager + bureau + juridique coûtent autant pour 50 MW que 500 MW. Taille critique par pays = enjeu de profitabilité. Trop de pays × trop peu de MW = dilution des marges.",icon:"📊",c:C.red},
-        ].map((item,i)=>(
-          <div key={i} style={{borderRadius:8,padding:14,border:"1px solid "+item.c+"20",borderLeft:"4px solid "+item.c}}>
-            <div style={{display:"flex",gap:8,alignItems:"center",marginBottom:6}}><span style={{fontSize:18}}>{item.icon}</span><span style={{fontWeight:700,fontSize:13,color:item.c}}>{item.t}</span></div>
-            <div style={{fontSize:12,color:C.text,lineHeight:1.6}}>{item.d}</div>
-          </div>
-        ))}
-      </div>
-      <Callout type="akuo"><strong>Trade-off central (question n°9) :</strong> Akuo est dans 3 régions, 10+ pays. Diversification = bénéfices portefeuille (météo, régulation, FX) mais <strong>coûts fixes de complexité</strong> (équipes, bureaux, compliance, management attention). L'enjeu = trouver le point optimal. La méthodologie CVA traite ce sujet dans le Step 3.</Callout>
-    </Card>
-  </>);
-}
-
-function SectionAkuo() {
-  return (<>
-    <SectionTitle num="09" title="Mission Akuo" subtitle="Le contexte spécifique de la mission — de la RFP aux questions stratégiques" />
-    <Card title="Le défi stratégique" icon="🎯" accent={C.navy} noPad>
-      <div style={{padding:"16px 22px"}}>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10,marginBottom:16}}>
-          {[
-            {label:"Point de départ",color:C.navy,items:["2 GW en opération","Pipeline global","Développeur pur historiquement","Acquisition Ardian juillet 2025","3 régions, 10+ pays"]},
-            {label:"Ambition 2030",color:C.teal,items:["5 GW opération / construction","IPP intégré, equity at stake","Pipeline auto-régénérant","Modèle opérationnel optimisé","Capital allocation disciplinée"]},
-            {label:"Ce qui change",color:C.amber,items:["Critères = IRR vs. marge dev","Besoin de recurring cash flows","WACC = avantage compétitif","Capital à risque → discipline accrue","Consolidation = opportunité"]},
-          ].map((col,i)=>(
-            <div key={i} style={{background:col.color+"08",borderRadius:8,padding:14,borderTop:"3px solid "+col.color}}>
-              <div style={{fontWeight:700,fontSize:13,color:col.color,marginBottom:8}}>{col.label}</div>
-              {col.items.map((item,j)=><div key={j} style={{fontSize:11.5,color:C.text,padding:"3px 0",display:"flex",gap:6,alignItems:"flex-start",lineHeight:1.4}}><div style={{width:4,height:4,borderRadius:"50%",background:col.color,marginTop:5,flexShrink:0}}/>{item}</div>)}
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{background:"#FAFBFC",padding:"16px 22px",borderTop:"1px solid "+C.borderLight}}>
-        <div style={{fontWeight:700,fontSize:14,color:C.navy,marginBottom:12}}>Les 9 questions stratégiques de la RFP</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"6px 16px"}}>
-          {[["Sélection pays","Stay / accelerate / exit / enter"],["Forces & faiblesses","Diagnostic par pays"],["Facteurs clés de succès","Position vs. concurrence"],["Cible de pipeline","MW par pays"],["Mix greenfield / M&A","Ratio par pays et techno"],["Rôle dans la consolidation","Consolidateur ou cible ?"],["Make or buy","Dev, EPC, O&M, OT, EMS"],["Effets de portefeuille","Géo, techno, route-to-market"],["Diversification vs. complexité","3 régions, 10+ pays"]].map(([q,d],i)=>(
-            <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:"1px solid "+C.borderLight,alignItems:"center"}}>
-              <div style={{background:C.navy,color:"#fff",borderRadius:4,width:20,height:20,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0}}>{i+1}</div>
-              <div><span style={{fontWeight:600,fontSize:12,color:C.navy}}>{q}</span> <span style={{fontSize:11,color:C.textLight}}>— {d}</span></div>
-            </div>
-          ))}
-        </div>
-      </div>
-      <div style={{padding:"16px 22px"}}>
-        <div style={{fontWeight:700,fontSize:14,color:C.navy,marginBottom:10}}>Périmètre géographique</div>
-        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10}}>
-          <div style={{background:C.navy+"08",borderRadius:8,padding:14}}>
-            <div style={{fontWeight:700,fontSize:12,color:C.navy,marginBottom:6}}>Groupe A — pays de présence</div>
-            <div style={{fontSize:11.5,color:C.text,lineHeight:1.7}}>
-              <MiniTag color={C.navy}>Europe Ouest</MiniTag> France (+ DOM-TOM), Portugal<br/>
-              <MiniTag color={C.teal}>Europe Est</MiniTag> Pologne, Croatie, Monténégro, Serbie, Kosovo, Macédoine du Nord, Grèce, Bulgarie<br/>
-              <MiniTag color={C.amber}>LatAm</MiniTag> Uruguay, Chili, Rép. Dominicaine<br/>
-              <MiniTag color={C.textLight}>Autre</MiniTag> Nouvelle-Zélande
-            </div>
-          </div>
-          <div style={{background:C.teal+"08",borderRadius:8,padding:14}}>
-            <div style={{fontWeight:700,fontSize:12,color:C.teal,marginBottom:6}}>Groupe B — pays adjacents</div>
-            <div style={{fontSize:11.5,color:C.text,lineHeight:1.7}}>Italie, Royaume-Uni, Allemagne — et tout autre marché pertinent.<br/><br/><strong style={{color:C.red}}>US hors périmètre</strong> — explicitement exclu.</div>
-          </div>
-        </div>
-      </div>
-    </Card>
-    <Card title="Deliverables attendus" icon="📦" accent={C.teal}>
-      <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:10}}>
-        {[{num:"I",t:"State of the Market",d:"Pays par pays : macro, supply/demand, mégatrends, data centers, coûts ENR, grid, régulation, permitting, route-to-market, concurrence, scénarios.",c:C.navy},{num:"II",t:"Country Benchmarks",d:"Comparaison inter-pays : équipes, permitting, offtake, soutien politique, coût du capital.",c:C.teal},{num:"III",t:"Conclusions",d:"Gaps, North Star, postures par pays, technologies, revenue stack, make-or-buy, plan d'implémentation.",c:C.amber}].map((d,i)=>(
-          <div key={i} style={{borderRadius:8,padding:14,border:"1px solid "+d.c+"22",borderTop:"3px solid "+d.c}}>
-            <div style={{fontWeight:800,fontSize:20,color:d.c,fontFamily:"monospace"}}>{d.num}</div>
-            <div style={{fontWeight:700,fontSize:13,color:d.c,margin:"4px 0 6px"}}>{d.t}</div>
-            <div style={{fontSize:11,color:C.textMid,lineHeight:1.55}}>{d.d}</div>
-          </div>
-        ))}
-      </div>
-    </Card>
-  </>);
-}
-
-function SectionMethod() {
-  return (<>
-    <SectionTitle num="10" title="Méthodologie CVA" subtitle="Notre approche en 3 étapes — de l'univers pays au plan d'action par segment" />
-    <Card title="Architecture de la méthodologie" icon="🏛️" accent={C.navy}>
-      <p style={{marginBottom:14}}>Segmentation en <strong>4 axes</strong> converties en une <strong>unité commune d'analyse</strong>, et process en <strong>3 étapes</strong> (filtrage pays → scoring opportunités → réconciliation portefeuille).</p>
-      <div style={{background:"#F8FAFC",borderRadius:8,padding:"16px 20px",border:"1px solid "+C.borderLight,marginBottom:16}}>
-        <div style={{fontSize:11.5,fontWeight:700,color:C.textLight,textTransform:"uppercase",letterSpacing:0.5,marginBottom:10}}>Unité commune d'analyse</div>
-        <div style={{display:"flex",alignItems:"center",justifyContent:"center",gap:6,flexWrap:"wrap"}}>
-          {[{l:"Géographie",s:"Pays / zone",c:C.navy},{l:"Technologie",s:"Solar / Wind / BESS",c:C.teal},{l:"Revenue stack",s:"Auction → Merchant",c:C.amber},{l:"Entry route",s:"GF / BF / M&A",c:C.green}].map((a,i)=>(
-            <div key={i} style={{display:"flex",alignItems:"center",gap:6}}>
-              <FlowBox label={a.l} sub={a.s} color={a.c} small width={110}/>
-              {i<3&&<span style={{fontSize:18,color:C.textLight,fontWeight:300}}>×</span>}
-            </div>
-          ))}
-        </div>
-        <div style={{textAlign:"center",marginTop:10,fontSize:11,color:C.textMid}}>Chaque cellule (ex : <em>Pologne × Solaire × PPA privé × Greenfield</em>) est scorée et comparée like-for-like</div>
-      </div>
-    </Card>
-    {[
-      {step:"Step 1",title:"Geography filtering",color:C.navy,icon:"🌍",question:"Quels pays sont intrinsèquement attractifs, compatibles avec les guardrails stratégiques et scalables ?",unit:"Géographie + strategic fit",output:"Keep / Reserve / Drop",criteria:[["Market depth & growth","Installé, commissioning, ambitions 2030, tender cadence, CAPEX adressable"],["Power market economics","Wholesale & capture prices, cannibalization, curtailment, spreads"],["Route-to-market depth","Schemes/auctions, PPA depth, merchant feasibility, hedging, EMS maturity"],["Regulatory & execution risk","Permitting duration & hit rate, grid access, political support"],["Competition & consolidation","Developer density, utility presence, M&A access, partnerability"],["Strategic fit & scalability","Recurring origination, footprint relevance, FX, diversification"]],templates:"Templates 1A + 1B + 1C"},
-      {step:"Step 2",title:"Opportunity filtering",color:C.teal,icon:"🔬",question:"Dans les pays shortlistés, quelles cellules d'opportunité offrent le meilleur fit risque-ajusté ?",unit:"Géo × Techno × Revenue stack × Entry route",output:"Segments prioritaires + mix greenfield/M&A",criteria:[["Technology-specific viability","Resource, captured price, site availability, load factors, repowering"],["Revenue stack attractiveness","Price vs. cost, tenor, counterparty quality, merchant upside, value stacking"],["Entry route attractiveness","DEVEX, time-to-permit, brownfield readiness, M&A availability"],["Capital efficiency & hurdle fit","CAPEX intensity, time to COD, IRR range, downside resilience"],["Portfolio contribution","Diversification, complementarity, synergies, fixed cost absorption"],["Akuo right to win","Local team, permitting capability, offtake access, role in dev/EPC/O&M/OT/EMS"]],templates:"Templates 2A + 2B + 2C"},
-      {step:"Step 3",title:"Final intercomparison",color:C.amber,icon:"📋",question:"Comment réconcilier les meilleures opportunités et le footprint actuel en une vue cohérente ?",unit:"Top opportunities + footprint + platform implications",output:"Posture par pays + target ambition + trade-offs",criteria:[["Portfolio optimization","Diversification vs. concentration, corrélation, FX, régulation"],["Capital allocation","Par pays/techno/revenue stack, séquencement investissements"],["Operating model","Internalisation vs. externalisation par maillon"],["Implementation roadmap","Actions prioritaires, quick wins vs. investissements structurels"],["Risk management","Scénarios, plan de contingence"],["Ambition setting","MW cibles par pays et technologie, milestones 2026-2030"]],templates:"Consolidation cross-pays"},
-    ].map((s,idx)=>(
-      <Card key={idx} title={s.icon+" "+s.step+" — "+s.title} accent={s.color} noPad>
-        <div style={{padding:"16px 22px"}}>
-          <div style={{background:s.color+"08",borderRadius:6,padding:"10px 14px",marginBottom:14,border:"1px solid "+s.color+"18"}}>
-            <div style={{fontSize:11,fontWeight:700,color:s.color,marginBottom:4}}>Question adressée</div>
-            <div style={{fontSize:12.5,color:C.text,fontStyle:"italic",lineHeight:1.5}}>{s.question}</div>
-          </div>
-          <div style={{display:"flex",gap:12,marginBottom:14}}>
-            <div style={{flex:1,fontSize:11.5}}><span style={{fontWeight:700,color:C.textLight}}>Unité : </span><span style={{color:C.text}}>{s.unit}</span></div>
-            <div style={{flex:1,fontSize:11.5}}><span style={{fontWeight:700,color:C.textLight}}>Output : </span><span style={{color:s.color,fontWeight:600}}>{s.output}</span></div>
-          </div>
-          <div style={{fontSize:11.5,fontWeight:700,color:C.textLight,marginBottom:8}}>6 critères d'évaluation</div>
-          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:"4px 12px"}}>
-            {s.criteria.map(([name,detail],i)=>(
-              <div key={i} style={{display:"flex",gap:8,padding:"6px 0",borderBottom:"1px solid "+C.borderLight,alignItems:"flex-start"}}>
-                <div style={{background:s.color,color:"#fff",borderRadius:3,width:18,height:18,display:"flex",alignItems:"center",justifyContent:"center",fontSize:10,fontWeight:700,flexShrink:0,marginTop:1}}>{i+1}</div>
-                <div><div style={{fontWeight:700,fontSize:11.5,color:C.navy}}>{name}</div><div style={{fontSize:10.5,color:C.textLight,lineHeight:1.4,marginTop:1}}>{detail}</div></div>
-              </div>
-            ))}
-          </div>
-          <div style={{marginTop:10,fontSize:11,color:C.textLight,fontStyle:"italic"}}>📄 {s.templates}</div>
-        </div>
-      </Card>
-    ))}
-    <Callout type="so"><strong>Logique d'ensemble :</strong> Step 1 réduit l'univers pays → Step 2 compare les cellules d'opportunité → Step 3 réconcilie en portefeuille cohérent. Chaque étape a 6 critères complémentaires : Step 1 = attractivité marché, Step 2 = fit avec Akuo et ses hurdles, Step 3 = cohérence portefeuille et implémentation.</Callout>
-  </>);
-}
-
-const SECTION_MAP = {intro:SectionIntro,market:SectionMarket,tech:SectionTech,revenue:SectionRevenue,lifecycle:SectionLifecycle,grid:SectionGrid,finance:SectionFinance,competition:SectionCompetition,portfolio:SectionPortfolio,akuo:SectionAkuo,method:SectionMethod};
-
-export default function EnergyConceptsExplainer() {
-  const [activeSection, setActiveSection] = useState("intro");
-  const contentRef = useRef(null);
-  const SectionComponent = SECTION_MAP[activeSection];
-  const activeIdx = SECTIONS.findIndex(s=>s.id===activeSection);
-
-  useEffect(()=>{contentRef.current?.scrollTo({top:0,behavior:"smooth"});},[activeSection]);
-
-  return (
-    <div style={{minHeight:"100vh",display:"flex",flexDirection:"column",fontFamily:"'DM Sans',-apple-system,BlinkMacSystemFont,sans-serif",background:C.bg,color:C.text}}>
-      <style>{"@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');*{box-sizing:border-box;margin:0;}::-webkit-scrollbar{width:6px}::-webkit-scrollbar-thumb{background:"+C.border+";border-radius:3px}::-webkit-scrollbar-track{background:transparent}"}</style>
-
-      <div style={{background:"linear-gradient(135deg,"+C.navy+" 0%,"+C.navyLight+" 50%,"+C.teal+" 100%)",color:"#fff",padding:"24px 32px 20px",flexShrink:0}}>
-        <div style={{display:"flex",justifyContent:"space-between",alignItems:"flex-start"}}>
-          <div>
-            <div style={{fontSize:10,textTransform:"uppercase",letterSpacing:2,opacity:0.6,fontFamily:"monospace",marginBottom:8}}>CVA × Akuo · Onboarding consultant</div>
-            <h1 style={{fontSize:22,fontWeight:800,letterSpacing:-0.5,margin:0,lineHeight:1.25}}>Fondamentaux du marché de l'énergie renouvelable</h1>
-            <p style={{fontSize:12.5,opacity:0.75,marginTop:6,maxWidth:520,lineHeight:1.55}}>Guide interactif — de la formation des prix de l'électricité à la structuration d'un portefeuille d'IPP. Conçu pour la mission Akuo 2030 Strategic Plan.</p>
-          </div>
-          <div style={{textAlign:"right",opacity:0.5,fontSize:10,fontFamily:"monospace",lineHeight:1.8}}>Confidentiel<br/>Mars 2026<br/>v2.0</div>
-        </div>
-        <div style={{marginTop:16,display:"flex",gap:3}}>
-          {SECTIONS.map((s,i)=><div key={s.id} onClick={()=>setActiveSection(s.id)} style={{flex:1,height:3,borderRadius:2,cursor:"pointer",background:i<=activeIdx?"rgba(255,255,255,0.8)":"rgba(255,255,255,0.15)",transition:"background 0.2s"}}/>)}
-        </div>
-      </div>
-
-      <div style={{display:"flex",flex:1,overflow:"hidden"}}>
-        <div style={{width:220,background:"#fff",borderRight:"1px solid "+C.border,overflow:"auto",flexShrink:0}}>
-          <div style={{padding:"12px 0"}}>
-            {SECTIONS.map((s)=>(
-              <button key={s.id} onClick={()=>setActiveSection(s.id)} style={{display:"flex",alignItems:"center",gap:10,width:"100%",border:"none",background:activeSection===s.id?C.teal+"0D":"transparent",padding:"9px 20px",cursor:"pointer",textAlign:"left",borderLeft:activeSection===s.id?"3px solid "+C.teal:"3px solid transparent",transition:"all 0.15s"}}>
-                <span style={{fontFamily:"monospace",fontSize:10,color:activeSection===s.id?C.teal:C.textLight,fontWeight:500,width:20}}>{s.num}</span>
-                <span style={{fontSize:12.5,fontWeight:activeSection===s.id?700:500,color:activeSection===s.id?C.navy:C.textMid}}>{s.label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div ref={contentRef} style={{flex:1,overflow:"auto",padding:"28px 36px 80px"}}>
-          <div style={{maxWidth:740,margin:"0 auto"}}>
-            <SectionComponent/>
-            <div style={{display:"flex",justifyContent:"space-between",marginTop:32,paddingTop:20,borderTop:"1px solid "+C.border}}>
-              {activeIdx>0?<button onClick={()=>setActiveSection(SECTIONS[activeIdx-1].id)} style={{border:"1px solid "+C.border,background:"#fff",padding:"8px 16px",borderRadius:6,cursor:"pointer",fontSize:12,color:C.textMid,fontWeight:500}}>← {SECTIONS[activeIdx-1].label}</button>:<div/>}
-              {activeIdx<SECTIONS.length-1?<button onClick={()=>setActiveSection(SECTIONS[activeIdx+1].id)} style={{border:"none",background:C.navy,color:"#fff",padding:"8px 16px",borderRadius:6,cursor:"pointer",fontSize:12,fontWeight:600}}>{SECTIONS[activeIdx+1].label} →</button>:<div/>}
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
+render();
+</script>
+</body>
+</html>
